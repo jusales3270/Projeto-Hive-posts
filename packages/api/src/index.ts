@@ -57,25 +57,28 @@ async function start() {
   try {
     await initMinio();
     console.log('MinIO initialized');
+  } catch (err) {
+    console.warn('MinIO initialization failed (uploads will not work):', (err as Error).message);
+  }
 
+  try {
     await initTokenRefreshJob();
     console.log('Token refresh job scheduled');
-
-    publishWorker.on('failed', (job, err) => {
-      console.error(`Publish job ${job?.id} failed:`, err.message);
-    });
-
-    tokenRefreshWorker.on('failed', (job, err) => {
-      console.error(`Token refresh job ${job?.id} failed:`, err.message);
-    });
-
-    app.listen(env.PORT, () => {
-      console.log(`InstaPost API running on port ${env.PORT}`);
-    });
   } catch (err) {
-    console.error('Failed to start server:', err);
-    process.exit(1);
+    console.warn('Token refresh job failed to start:', (err as Error).message);
   }
+
+  publishWorker.on('failed', (job, err) => {
+    console.error(`Publish job ${job?.id} failed:`, err.message);
+  });
+
+  tokenRefreshWorker.on('failed', (job, err) => {
+    console.error(`Token refresh job ${job?.id} failed:`, err.message);
+  });
+
+  app.listen(env.PORT, () => {
+    console.log(`InstaPost API running on port ${env.PORT}`);
+  });
 }
 
 start();
