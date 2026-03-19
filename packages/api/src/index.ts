@@ -12,7 +12,7 @@ import { tokenRefreshWorker, initTokenRefreshJob } from './jobs/token-refresh.wo
 
 const app = express();
 
-app.use(cors({ origin: env.FRONTEND_URL }));
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 app.use(apiLimiter);
 
