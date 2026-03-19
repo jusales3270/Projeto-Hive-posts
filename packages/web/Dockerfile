@@ -9,8 +9,7 @@ COPY packages/web/package.json ./packages/web/
 RUN npm ci
 COPY packages/shared ./packages/shared
 COPY packages/web ./packages/web
-ARG NEXT_PUBLIC_API_URL
-ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+ENV API_INTERNAL_URL=http://api:3001
 RUN npx turbo build --filter=@instapost/web
 
 FROM node:20-alpine
