@@ -1,44 +1,43 @@
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: instapost-postgres
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-instapost}
       POSTGRES_USER: ${POSTGRES_USER:-instapost}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
     volumes:
       - pgdata:/var/lib/postgresql/data
     restart: unless-stopped
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-instapost}']
+      test: ['CMD-SHELL', 'pg_isready -U instapost']
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 30s
     networks:
       - instapost
 
   redis:
     image: redis:7-alpine
-    container_name: instapost-redis
-    command: redis-server --requirepass ${REDIS_PASSWORD}
+    command: redis-server --requirepass ${REDIS_PASSWORD:-changeme}
     volumes:
       - redisdata:/data
     restart: unless-stopped
     healthcheck:
-      test: ['CMD', 'redis-cli', '-a', '${REDIS_PASSWORD}', 'ping']
+      test: ['CMD', 'redis-cli', '-a', '${REDIS_PASSWORD:-changeme}', 'ping']
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 10s
     networks:
       - instapost
 
   minio:
     image: minio/minio:latest
-    container_name: instapost-minio
     command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
-      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
     ports:
       - '9000:9000'
       - '9001:9001'
@@ -49,7 +48,8 @@ services:
       test: ['CMD', 'mc', 'ready', 'local']
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 10s
     networks:
       - instapost
 
@@ -57,24 +57,23 @@ services:
     build:
       context: .
       dockerfile: packages/api/Dockerfile
-    container_name: instapost-api
     ports:
       - '3001:3001'
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-instapost}:${DB_PASSWORD}@postgres:5432/${POSTGRES_DB:-instapost}
-      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      DATABASE_URL: postgresql://${POSTGRES_USER:-instapost}:${DB_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-instapost}
+      REDIS_URL: redis://:${REDIS_PASSWORD:-changeme}@redis:6379
       MINIO_ENDPOINT: minio
       MINIO_PORT: 9000
       MINIO_USE_SSL: "false"
-      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
-      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
       MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL:-http://localhost:9000}
       MINIO_BUCKET: instapost-images
-      INSTAGRAM_ACCESS_TOKEN: ${INSTAGRAM_ACCESS_TOKEN}
-      INSTAGRAM_USER_ID: ${INSTAGRAM_USER_ID}
-      NANO_BANANA_API_KEY: ${NANO_BANANA_API_KEY}
+      INSTAGRAM_ACCESS_TOKEN: ${INSTAGRAM_ACCESS_TOKEN:-}
+      INSTAGRAM_USER_ID: ${INSTAGRAM_USER_ID:-}
+      NANO_BANANA_API_KEY: ${NANO_BANANA_API_KEY:-}
       NANO_BANANA_PROVIDER: google
-      JWT_SECRET: ${JWT_SECRET}
+      JWT_SECRET: ${JWT_SECRET:-defaultsecret}
       JWT_EXPIRES_IN: 7d
       NODE_ENV: production
       PORT: 3001
@@ -96,7 +95,6 @@ services:
       dockerfile: packages/web/Dockerfile
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001}
-    container_name: instapost-web
     ports:
       - '3000:3000'
     depends_on:
@@ -109,10 +107,9 @@ services:
     build:
       context: .
       dockerfile: packages/bot/Dockerfile
-    container_name: instapost-bot
     environment:
-      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
-      TELEGRAM_ALLOWED_CHAT_IDS: ${TELEGRAM_ALLOWED_CHAT_IDS}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_ALLOWED_CHAT_IDS: ${TELEGRAM_ALLOWED_CHAT_IDS:-}
       API_URL: http://api:3001
     depends_on:
       - api
@@ -124,11 +121,10 @@ services:
     build:
       context: .
       dockerfile: packages/mcp/Dockerfile
-    container_name: instapost-mcp
     ports:
       - '3002:3002'
     environment:
-      MCP_AUTH_TOKEN: ${MCP_AUTH_TOKEN}
+      MCP_AUTH_TOKEN: ${MCP_AUTH_TOKEN:-}
       API_URL: http://api:3001
     depends_on:
       - api
