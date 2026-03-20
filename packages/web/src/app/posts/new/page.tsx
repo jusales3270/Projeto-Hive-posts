@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '../../../lib/api';
-import { Zap, Image as ImageIcon, Edit3, Clock, Send, Save, Loader2, X, Heart, MessageCircle, Share } from 'lucide-react';
+import { Zap, Image as ImageIcon, Edit3, Clock, Send, Save, Loader2, X, Heart, MessageCircle, Share, ChevronLeft, ChevronRight, Layers, Plus, Trash2 } from 'lucide-react';
 
 const ASPECT_RATIOS = [
   { value: '1:1', label: '1:1', desc: 'Feed' },
@@ -11,11 +11,17 @@ const ASPECT_RATIOS = [
   { value: '9:16', label: '9:16', desc: 'Stories/Reels' },
 ];
 
+interface CarouselImage {
+  url: string;
+  prompt?: string;
+}
+
 export default function NewPost() {
   const router = useRouter();
   const [caption, setCaption] = useState('');
   const [prompt, setPrompt] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
+  const [images, setImages] = useState<CarouselImage[]>([]);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [hashtags, setHashtags] = useState('');
   const [scheduledAt, setScheduledAt] = useState('');
   const [aspectRatio, setAspectRatio] = useState('1:1');
@@ -27,11 +33,17 @@ export default function NewPost() {
 
   async function handleGenerateImage() {
     if (!prompt) return;
+    if (images.length >= 10) {
+      setMessage('Maximo de 10 imagens por carrossel');
+      setMessageType('error');
+      return;
+    }
     setGenLoading(true);
     setMessage('');
     try {
       const result = await api.generateImage(prompt, aspectRatio);
-      setImageUrl(result.imageUrl);
+      setImages((prev) => [...prev, { url: result.imageUrl, prompt }]);
+      setActiveImageIndex(images.length);
     } catch (err: any) {
       setMessage(err.message || 'Erro ao gerar imagem');
       setMessageType('error');
@@ -53,17 +65,37 @@ export default function NewPost() {
     setGenLoading(false);
   }
 
+  function handleRemoveImage(index: number) {
+    setImages((prev) => prev.filter((_, i) => i !== index));
+    if (activeImageIndex >= images.length - 1) {
+      setActiveImageIndex(Math.max(0, images.length - 2));
+    }
+  }
+
   async function handleSave(status: 'draft' | 'schedule' | 'publish') {
     setLoading(true);
     setMessage('');
     try {
-      const post = (await api.createPost({
+      const isCarousel = images.length >= 2;
+      const payload: Record<string, unknown> = {
         caption,
-        imageUrl: imageUrl || undefined,
         hashtags: hashtags.split(',').map((h) => h.trim()).filter(Boolean),
         nanoPrompt: prompt || undefined,
         aspectRatio,
-      })) as any;
+      };
+
+      if (isCarousel) {
+        payload.isCarousel = true;
+        payload.images = images.map((img, idx) => ({
+          imageUrl: img.url,
+          order: idx,
+          prompt: img.prompt,
+        }));
+      } else if (images.length === 1) {
+        payload.imageUrl = images[0].url;
+      }
+
+      const post = (await api.createPost(payload)) as any;
 
       if (status === 'schedule' && scheduledAt) {
         await api.schedulePost(post.id, new Date(scheduledAt).toISOString());
@@ -118,14 +150,27 @@ export default function NewPost() {
               </div>
               <div className="flex gap-2">
                 <button onClick={handleGenerateImage} disabled={genLoading || !prompt} className="btn-cta flex-1 justify-center text-xs py-2.5">
-                  {genLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" strokeWidth={1.5} />}
-                  {genLoading ? 'Gerando...' : 'Gerar Imagem'}
+                  {genLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" strokeWidth={1.5} />}
+                  {genLoading ? 'Gerando...' : images.length > 0 ? 'Adicionar Imagem' : 'Gerar Imagem'}
                 </button>
                 <button onClick={handleGenerateCaption} disabled={genLoading || !prompt} className="btn-ghost flex-1 justify-center text-xs py-2.5">
                   <Edit3 className="w-4 h-4" strokeWidth={1.5} />
                   Gerar Legenda
                 </button>
               </div>
+              {images.length > 0 && (
+                <div className="text-center">
+                  <span className="text-xs text-text-muted">
+                    {images.length}/10 imagens
+                    {images.length === 1 && ' (adicione mais 1 para carrossel)'}
+                    {images.length >= 2 && (
+                      <span className="inline-flex items-center gap-1 ml-1.5 text-primary font-medium">
+                        <Layers className="w-3 h-3" /> carrossel
+                      </span>
+                    )}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -231,10 +276,62 @@ export default function NewPost() {
                 </div>
               </div>
 
-              {/* Image */}
-              {imageUrl ? (
-                <div className={`${previewAspect} max-h-[500px] bg-bg-main flex items-center justify-center overflow-hidden`}>
-                  <img src={imageUrl} alt="Preview" className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity" onClick={() => setShowFullImage(true)} />
+              {/* Image / Carousel */}
+              {images.length > 0 ? (
+                <div className="relative">
+                  <div className={`${previewAspect} max-h-[500px] bg-bg-main flex items-center justify-center overflow-hidden`}>
+                    <img
+                      src={images[activeImageIndex]?.url}
+                      alt={`Imagem ${activeImageIndex + 1}`}
+                      className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                      onClick={() => setShowFullImage(true)}
+                    />
+                    {/* Remove button */}
+                    <button
+                      onClick={() => handleRemoveImage(activeImageIndex)}
+                      className="absolute top-2 right-2 w-7 h-7 bg-black/50 rounded-full flex items-center justify-center text-white hover:bg-black/70 transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  {/* Carousel navigation */}
+                  {images.length > 1 && (
+                    <>
+                      {activeImageIndex > 0 && (
+                        <button
+                          onClick={() => setActiveImageIndex((i) => i - 1)}
+                          className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 rounded-full flex items-center justify-center shadow-sm hover:bg-white transition-colors"
+                        >
+                          <ChevronLeft className="w-5 h-5 text-text-primary" />
+                        </button>
+                      )}
+                      {activeImageIndex < images.length - 1 && (
+                        <button
+                          onClick={() => setActiveImageIndex((i) => i + 1)}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 rounded-full flex items-center justify-center shadow-sm hover:bg-white transition-colors"
+                        >
+                          <ChevronRight className="w-5 h-5 text-text-primary" />
+                        </button>
+                      )}
+                      {/* Dots */}
+                      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+                        {images.map((_, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => setActiveImageIndex(idx)}
+                            className={`h-2 rounded-full transition-all ${
+                              idx === activeImageIndex ? 'bg-primary w-4' : 'bg-white/60 w-2'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      {/* Counter */}
+                      <div className="absolute top-3 left-3 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
+                        {activeImageIndex + 1}/{images.length}
+                      </div>
+                    </>
+                  )}
                 </div>
               ) : (
                 <div className="py-16 bg-bg-main flex items-center justify-center">
@@ -269,10 +366,10 @@ export default function NewPost() {
       </div>
 
       {/* Full Image Modal */}
-      {showFullImage && imageUrl && (
+      {showFullImage && images.length > 0 && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 cursor-pointer modal-backdrop" onClick={() => setShowFullImage(false)}>
           <div className="relative modal-content">
-            <img src={imageUrl} alt="Full size" className="max-w-full max-h-[85vh] object-contain rounded-card shadow-2xl" />
+            <img src={images[activeImageIndex]?.url} alt="Full size" className="max-w-full max-h-[85vh] object-contain rounded-card shadow-2xl" />
             <button onClick={() => setShowFullImage(false)} className="absolute -top-3 -right-3 w-8 h-8 bg-white rounded-full shadow-md flex items-center justify-center text-text-secondary hover:text-text-primary transition-colors">
               <X className="w-4 h-4" strokeWidth={2} />
             </button>

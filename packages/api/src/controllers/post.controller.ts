@@ -18,8 +18,29 @@ async function resolveUserId(reqUserId: string): Promise<string> {
 export async function createPost(req: AuthRequest, res: Response) {
   try {
     const userId = await resolveUserId(req.userId!);
+    const { images, ...postData } = req.body;
+
+    const isCarousel = !!(images && images.length >= 2);
+
     const post = await prisma.post.create({
-      data: { ...req.body, userId },
+      data: {
+        ...postData,
+        userId,
+        isCarousel,
+        imageUrl: isCarousel ? images[0].imageUrl : postData.imageUrl,
+        ...(isCarousel && {
+          images: {
+            create: images.map((img: any, idx: number) => ({
+              imageUrl: img.imageUrl,
+              minioKey: img.minioKey || null,
+              order: img.order ?? idx,
+              source: img.source || postData.imageSource || 'NANOBANA',
+              prompt: img.prompt || null,
+            })),
+          },
+        }),
+      },
+      include: { images: { orderBy: { order: 'asc' } } },
     });
     res.status(201).json({ success: true, data: post });
   } catch (err: any) {
@@ -40,7 +61,13 @@ export async function listPosts(req: AuthRequest, res: Response) {
 
     const skip = (page - 1) * take;
     const [items, total] = await Promise.all([
-      prisma.post.findMany({ where, skip, take, orderBy: { createdAt: 'desc' } }),
+      prisma.post.findMany({
+        where,
+        skip,
+        take,
+        orderBy: { createdAt: 'desc' },
+        include: { images: { orderBy: { order: 'asc' } } },
+      }),
       prisma.post.count({ where }),
     ]);
 
@@ -53,7 +80,11 @@ export async function listPosts(req: AuthRequest, res: Response) {
 export async function getPost(req: AuthRequest, res: Response) {
   try {
     const id = paramId(req);
-    const post = await prisma.post.findFirst({ where: { id, userId: req.userId } });
+    const userId = await resolveUserId(req.userId!);
+    const post = await prisma.post.findFirst({
+      where: { id, userId },
+      include: { images: { orderBy: { order: 'asc' } } },
+    });
     if (!post) { res.status(404).json({ success: false, error: 'Post not found' }); return; }
     res.json({ success: true, data: post });
   } catch (err) {
@@ -66,7 +97,7 @@ export async function updatePost(req: AuthRequest, res: Response) {
     const id = paramId(req);
     const post = await prisma.post.updateMany({ where: { id, userId: req.userId }, data: req.body });
     if (post.count === 0) { res.status(404).json({ success: false, error: 'Post not found' }); return; }
-    const updated = await prisma.post.findUnique({ where: { id } });
+    const updated = await prisma.post.findUnique({ where: { id }, include: { images: { orderBy: { order: 'asc' } } } });
     res.json({ success: true, data: updated });
   } catch (err) {
     res.status(500).json({ success: false, error: 'Failed to update post' });
@@ -116,5 +147,70 @@ export async function schedulePostController(req: AuthRequest, res: Response) {
     res.json({ success: true, data: post });
   } catch (err) {
     res.status(500).json({ success: false, error: 'Failed to schedule post' });
+  }
+}
+
+export async function addImageToPost(req: AuthRequest, res: Response) {
+  try {
+    const postId = paramId(req);
+    const userId = await resolveUserId(req.userId!);
+    const post = await prisma.post.findFirst({ where: { id: postId, userId } });
+    if (!post) { res.status(404).json({ success: false, error: 'Post not found' }); return; }
+
+    const imageCount = await prisma.postImage.count({ where: { postId } });
+    if (imageCount >= 10) {
+      res.status(400).json({ success: false, error: 'Maximo de 10 imagens por carrossel' });
+      return;
+    }
+
+    const order = req.body.order ?? imageCount;
+
+    const image = await prisma.postImage.create({
+      data: {
+        postId,
+        imageUrl: req.body.imageUrl,
+        minioKey: req.body.minioKey || null,
+        order,
+        source: req.body.source || 'NANOBANA',
+        prompt: req.body.prompt || null,
+      },
+    });
+
+    const newCount = imageCount + 1;
+    if (newCount >= 2 && !post.isCarousel) {
+      await prisma.post.update({ where: { id: postId }, data: { isCarousel: true } });
+    }
+    if (order === 0 || imageCount === 0) {
+      await prisma.post.update({ where: { id: postId }, data: { imageUrl: req.body.imageUrl } });
+    }
+
+    res.status(201).json({ success: true, data: image });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err?.message || 'Failed to add image' });
+  }
+}
+
+export async function removeImageFromPost(req: AuthRequest, res: Response) {
+  try {
+    const postId = paramId(req);
+    const imageId = req.params.imageId as string;
+    const userId = await resolveUserId(req.userId!);
+
+    const post = await prisma.post.findFirst({ where: { id: postId, userId } });
+    if (!post) { res.status(404).json({ success: false, error: 'Post not found' }); return; }
+
+    const image = await prisma.postImage.findFirst({ where: { id: imageId, postId } });
+    if (!image) { res.status(404).json({ success: false, error: 'Image not found' }); return; }
+
+    await prisma.postImage.delete({ where: { id: imageId } });
+
+    const remaining = await prisma.postImage.count({ where: { postId } });
+    if (remaining < 2) {
+      await prisma.post.update({ where: { id: postId }, data: { isCarousel: false } });
+    }
+
+    res.json({ success: true, data: { deleted: true } });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err?.message || 'Failed to remove image' });
   }
 }

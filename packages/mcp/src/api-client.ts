@@ -56,4 +56,7 @@ export const api = {
 
   getAnalytics: (period: string) =>
     request(`/api/analytics?period=${period}`),
+
+  addImageToPost: (postId: string, image: { imageUrl: string; order?: number }) =>
+    request(`/api/posts/${postId}/images`, { method: 'POST', body: JSON.stringify(image) }),
 };

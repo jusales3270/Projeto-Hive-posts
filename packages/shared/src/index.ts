@@ -22,6 +22,17 @@ export enum PostSource {
 
 // === Interfaces ===
 
+export interface PostImage {
+  id: string;
+  imageUrl: string;
+  minioKey: string | null;
+  order: number;
+  source: ImageSource;
+  prompt: string | null;
+  postId: string;
+  createdAt: Date;
+}
+
 export interface Post {
   id: string;
   caption: string | null;
@@ -35,6 +46,8 @@ export interface Post {
   source: PostSource;
   hashtags: string[];
   aspectRatio: string;
+  isCarousel: boolean;
+  images?: PostImage[];
   userId: string;
   createdAt: Date;
   updatedAt: Date;
@@ -48,6 +61,14 @@ export interface User {
   updatedAt: Date;
 }
 
+export interface CreatePostImageInput {
+  imageUrl: string;
+  minioKey?: string;
+  order: number;
+  source?: ImageSource;
+  prompt?: string;
+}
+
 export interface CreatePostInput {
   caption?: string;
   imageUrl?: string;
@@ -57,6 +78,8 @@ export interface CreatePostInput {
   source?: PostSource;
   hashtags?: string[];
   aspectRatio?: string;
+  isCarousel?: boolean;
+  images?: CreatePostImageInput[];
 }
 
 export interface GenerateImageInput {

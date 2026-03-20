@@ -31,6 +31,11 @@ async function request<T = unknown>(path: string, options: RequestInit = {}): Pr
 export const api = {
   createPost: (body: Record<string, unknown>) => request('/api/posts', { method: 'POST', body: JSON.stringify(body) }),
 
+  getPost: (id: string) => request<any>(`/api/posts/${id}`),
+
+  updatePost: (id: string, body: Record<string, unknown>) =>
+    request(`/api/posts/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+
   listPosts: (status?: string) => request<{ items: any[]; total: number }>(`/api/posts?status=${status || ''}&limit=10`),
 
   publishPost: (id: string) => request(`/api/posts/${id}/publish`, { method: 'POST' }),
@@ -39,6 +44,9 @@ export const api = {
     request(`/api/posts/${id}/schedule`, { method: 'POST', body: JSON.stringify({ scheduledAt }) }),
 
   cancelPost: (id: string) => request(`/api/posts/${id}`, { method: 'DELETE' }),
+
+  addImageToPost: (postId: string, image: { imageUrl: string; order?: number }) =>
+    request(`/api/posts/${postId}/images`, { method: 'POST', body: JSON.stringify(image) }),
 
   generateImage: (prompt: string, aspectRatio = '1:1') =>
     request<{ imageUrl: string }>('/api/generate/image', {

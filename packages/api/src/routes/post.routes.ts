@@ -10,9 +10,19 @@ import {
   deletePost,
   publishPost,
   schedulePostController,
+  addImageToPost,
+  removeImageFromPost,
 } from '../controllers/post.controller';
 
 const router = Router();
+
+const postImageSchema = z.object({
+  imageUrl: z.string().url(),
+  minioKey: z.string().optional(),
+  order: z.number().int().min(0).max(9).optional(),
+  source: z.enum(['NANOBANA', 'UPLOAD', 'URL']).optional(),
+  prompt: z.string().optional(),
+});
 
 const createPostSchema = z.object({
   caption: z.string().max(2200).optional(),
@@ -22,10 +32,20 @@ const createPostSchema = z.object({
   source: z.enum(['WEB', 'TELEGRAM', 'MCP']).optional(),
   hashtags: z.array(z.string()).optional(),
   aspectRatio: z.string().optional(),
+  isCarousel: z.boolean().optional(),
+  images: z.array(postImageSchema).min(2).max(10).optional(),
 });
 
 const scheduleSchema = z.object({
   scheduledAt: z.string().datetime(),
+});
+
+const addImageSchema = z.object({
+  imageUrl: z.string().url(),
+  minioKey: z.string().optional(),
+  order: z.number().int().min(0).max(9).optional(),
+  source: z.enum(['NANOBANA', 'UPLOAD', 'URL']).optional(),
+  prompt: z.string().optional(),
 });
 
 router.use(authMiddleware);
@@ -37,5 +57,7 @@ router.put('/:id', updatePost);
 router.delete('/:id', deletePost);
 router.post('/:id/publish', publishPost);
 router.post('/:id/schedule', validate(scheduleSchema), schedulePostController);
+router.post('/:id/images', validate(addImageSchema), addImageToPost);
+router.delete('/:id/images/:imageId', removeImageFromPost);
 
 export default router;

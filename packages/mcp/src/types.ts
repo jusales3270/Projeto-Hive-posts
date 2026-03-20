@@ -1,9 +1,17 @@
 export interface CreatePostInput {
   caption?: string;
   image_prompt?: string;
+  image_prompts?: string[];
+  image_urls?: string[];
   scheduled_at?: string;
   hashtags?: string[];
   tone?: string;
+}
+
+export interface AddImageToPostInput {
+  post_id: string;
+  image_prompt?: string;
+  image_url?: string;
 }
 
 export interface GenerateImageInput {

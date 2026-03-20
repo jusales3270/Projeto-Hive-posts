@@ -26,8 +26,17 @@ export async function handleCallbackQuery(ctx: Context) {
         await ctx.answerCallbackQuery({ text: 'Gerando nova imagem...' });
         await ctx.reply('Gerando nova imagem... Aguarde.');
         try {
-          const result = await api.generateImage('Regenerate post image');
-          await sendPhoto(ctx, result.imageUrl);
+          const postData = (await api.getPost(postId)) as any;
+          const regenPrompt = postData?.nanoPrompt || 'Regenerate post image';
+          const result = await api.generateImage(regenPrompt, postData?.aspectRatio);
+
+          if (postData?.isCarousel) {
+            await api.addImageToPost(postId, { imageUrl: result.imageUrl });
+            await sendPhoto(ctx, result.imageUrl, { caption: 'Nova imagem adicionada ao carrossel!' });
+          } else {
+            await api.updatePost(postId, { imageUrl: result.imageUrl });
+            await sendPhoto(ctx, result.imageUrl);
+          }
         } catch {
           await ctx.reply('Erro ao gerar nova imagem.');
         }

@@ -31,14 +31,31 @@ model Post {
   source      PostSource  @default(WEB)
   hashtags    String[]
   aspectRatio String      @default("1:1")
+  isCarousel  Boolean     @default(false)
   userId      String
   user        User        @relation(fields: [userId], references: [id])
+  images      PostImage[]
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
   @@index([status])
   @@index([scheduledAt])
   @@index([userId])
+}
+
+model PostImage {
+  id        String      @id @default(uuid())
+  imageUrl  String
+  minioKey  String?
+  order     Int         @default(0)
+  source    ImageSource @default(NANOBANA)
+  prompt    String?
+  postId    String
+  post      Post        @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt DateTime    @default(now())
+
+  @@index([postId])
+  @@unique([postId, order])
 }
 
 model InstagramToken {

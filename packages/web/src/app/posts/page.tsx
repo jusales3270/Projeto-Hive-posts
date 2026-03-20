@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { api } from '../../lib/api';
-import { Plus, Trash2, Send, Calendar, X, Loader2, FileText, Image as ImageIcon } from 'lucide-react';
+import { Plus, Trash2, Send, Calendar, X, Loader2, FileText, Image as ImageIcon, Layers } from 'lucide-react';
 
 const STATUS_BADGE: Record<string, string> = {
   DRAFT: 'badge-draft',
@@ -131,18 +131,30 @@ export default function PostsList() {
                 <td className="px-5 py-4">
                   <div className="flex items-center gap-3">
                     {post.imageUrl ? (
-                      <img
-                        src={post.imageUrl}
-                        alt=""
-                        className="w-11 h-11 rounded-thumb object-cover cursor-pointer hover:opacity-80 transition-opacity border border-border"
-                        onClick={() => setSelectedImage(post.imageUrl)}
-                      />
+                      <div className="relative">
+                        <img
+                          src={post.imageUrl}
+                          alt=""
+                          className="w-11 h-11 rounded-thumb object-cover cursor-pointer hover:opacity-80 transition-opacity border border-border"
+                          onClick={() => setSelectedImage(post.imageUrl)}
+                        />
+                        {post.isCarousel && (
+                          <div className="absolute -top-1 -right-1 w-5 h-5 bg-primary rounded-full flex items-center justify-center shadow-sm">
+                            <Layers className="w-3 h-3 text-white" strokeWidth={2.5} />
+                          </div>
+                        )}
+                      </div>
                     ) : (
                       <div className="w-11 h-11 rounded-thumb bg-bg-main flex items-center justify-center border border-border">
                         <ImageIcon className="w-5 h-5 text-text-muted" strokeWidth={1.5} />
                       </div>
                     )}
-                    <p className="text-sm text-text-primary max-w-xs truncate">{post.caption || 'Sem legenda'}</p>
+                    <div>
+                      <p className="text-sm text-text-primary max-w-xs truncate">{post.caption || 'Sem legenda'}</p>
+                      {post.isCarousel && post.images?.length > 0 && (
+                        <span className="text-[10px] text-text-muted">{post.images.length} imagens</span>
+                      )}
+                    </div>
                   </div>
                 </td>
                 <td className="px-5 py-4">

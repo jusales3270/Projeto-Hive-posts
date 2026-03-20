@@ -10,22 +10,39 @@ import { listPosts } from './tools/listPosts';
 import { publishNow } from './tools/publishNow';
 import { uploadImage } from './tools/uploadImage';
 import { getAnalytics } from './tools/getAnalytics';
+import { addImageToPost } from './tools/addImageToPost';
 
 const PORT = parseInt(process.env.PORT || '3002', 10);
 
 function registerTools(server: McpServer) {
   server.tool(
     'create_post',
-    'Cria um post completo para Instagram (gera imagem + texto se necessário)',
+    'Cria um post para Instagram. Suporta imagem unica ou carrossel (2-10 imagens)',
     {
       caption: z.string().optional().describe('Legenda do post'),
-      image_prompt: z.string().optional().describe('Prompt para gerar imagem via Nano Banana'),
+      image_prompt: z.string().optional().describe('Prompt para gerar UMA imagem'),
+      image_prompts: z.array(z.string()).min(2).max(10).optional().describe('Array de prompts para gerar carrossel (2-10 imagens)'),
+      image_urls: z.array(z.string()).min(2).max(10).optional().describe('Array de URLs de imagens prontas para carrossel'),
       scheduled_at: z.string().optional().describe('Data/hora para agendar (ISO 8601)'),
       hashtags: z.array(z.string()).optional().describe('Lista de hashtags'),
       tone: z.string().optional().describe('Tom: educativo, inspirador, humor, noticia'),
     },
-    async ({ caption, image_prompt, scheduled_at, hashtags, tone }) => {
-      const result = await createPost({ caption, image_prompt, scheduled_at, hashtags, tone });
+    async ({ caption, image_prompt, image_prompts, image_urls, scheduled_at, hashtags, tone }) => {
+      const result = await createPost({ caption, image_prompt, image_prompts, image_urls, scheduled_at, hashtags, tone });
+      return { content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }] };
+    },
+  );
+
+  server.tool(
+    'add_image_to_post',
+    'Adiciona uma imagem a um post existente (transforma em carrossel se tiver 2+ imagens)',
+    {
+      post_id: z.string().describe('ID do post'),
+      image_prompt: z.string().optional().describe('Prompt para gerar imagem via IA'),
+      image_url: z.string().optional().describe('URL de imagem pronta'),
+    },
+    async ({ post_id, image_prompt, image_url }) => {
+      const result = await addImageToPost({ post_id, image_prompt, image_url });
       return { content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }] };
     },
   );
