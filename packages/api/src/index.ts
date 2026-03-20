@@ -31,6 +31,10 @@ app.get('/api/health', (_req, res) => {
     env: {
       NANO_BANANA_API_KEY: mask(env.NANO_BANANA_API_KEY),
       MINIO_ENDPOINT: env.MINIO_ENDPOINT,
+      MINIO_PORT: env.MINIO_PORT,
+      MINIO_ACCESS_KEY: env.MINIO_ACCESS_KEY,
+      MINIO_SECRET_KEY: env.MINIO_SECRET_KEY,
+      MINIO_USE_SSL: env.MINIO_USE_SSL,
       MINIO_PUBLIC_URL: env.MINIO_PUBLIC_URL,
       DATABASE_URL: env.DATABASE_URL ? 'SET' : 'NOT SET',
       REDIS_URL: env.REDIS_URL ? 'SET' : 'NOT SET',
