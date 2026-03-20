@@ -37,25 +37,31 @@ export async function generateImage(params: GenerateImageParams): Promise<Genera
   const model = 'gemini-3.1-flash-image-preview';
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${env.NANO_BANANA_API_KEY}`;
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: `Generate an image: ${enrichedPrompt}` }] }],
-      generationConfig: {
-        responseModalities: ['TEXT', 'IMAGE'],
-        imageConfig: {
-          aspectRatio: mapAspectRatio(params.aspectRatio),
-        },
+  const body = JSON.stringify({
+    contents: [{ parts: [{ text: `Generate an image: ${enrichedPrompt}` }] }],
+    generationConfig: {
+      responseModalities: ['TEXT', 'IMAGE'],
+      imageConfig: {
+        aspectRatio: mapAspectRatio(params.aspectRatio),
       },
-    }),
+    },
   });
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Gemini API error ${response.status}: ${errorText}`);
+  let response: globalThis.Response | null = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body,
+    });
+    if (response.ok || (response.status !== 503 && response.status !== 429)) break;
+    console.log(`[Gemini] ${response.status} on attempt ${attempt + 1}, retrying in ${(attempt + 1) * 5}s...`);
+    await new Promise(r => setTimeout(r, (attempt + 1) * 5000));
+  }
+
+  if (!response!.ok) {
+    const errorText = await response!.text();
+    throw new Error(`Gemini API error ${response!.status}: ${errorText}`);
   }
 
   const data = (await response.json()) as any;

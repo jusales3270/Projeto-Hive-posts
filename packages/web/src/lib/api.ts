@@ -48,9 +48,14 @@ async function request<T = unknown>(path: string, options: RequestInit = {}): Pr
     throw new Error('Unauthorized');
   }
 
-  const data = await res.json();
-  if (!res.ok) throw new Error((data as any).error || 'Request failed');
-  return (data as any).data;
+  let data: any;
+  try {
+    data = await res.json();
+  } catch {
+    throw new Error(res.ok ? 'Resposta invalida do servidor' : `Erro ${res.status}: servidor indisponivel`);
+  }
+  if (!res.ok) throw new Error(data?.error || 'Request failed');
+  return data?.data;
 }
 
 export const api = {
