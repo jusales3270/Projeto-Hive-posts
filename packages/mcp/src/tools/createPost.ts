@@ -2,6 +2,15 @@ import { api } from '../api-client';
 import { CreatePostInput } from '../types';
 
 export async function createPost(input: CreatePostInput) {
+  console.log('[MCP create_post] Input received:', JSON.stringify({
+    has_caption: !!input.caption,
+    image_prompt: input.image_prompt ? 'yes' : 'no',
+    image_prompts_count: input.image_prompts?.length || 0,
+    image_urls_count: input.image_urls?.length || 0,
+    aspect_ratio: input.aspect_ratio,
+    tone: input.tone,
+  }));
+
   let imageUrl: string | undefined;
   let images: Array<{ imageUrl: string; order: number; prompt?: string }> = [];
   let caption = input.caption;
@@ -41,6 +50,7 @@ export async function createPost(input: CreatePostInput) {
   }
 
   const isCarousel = images.length >= 2;
+  console.log('[MCP create_post] Result:', { isCarousel, imagesCount: images.length, hasImageUrl: !!imageUrl });
 
   const post = (await api.createPost({
     caption,

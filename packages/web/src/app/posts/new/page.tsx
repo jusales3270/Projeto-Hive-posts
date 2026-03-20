@@ -25,29 +25,52 @@ export default function NewPost() {
   const [hashtags, setHashtags] = useState('');
   const [scheduledAt, setScheduledAt] = useState('');
   const [aspectRatio, setAspectRatio] = useState('1:1');
+  const [imageCount, setImageCount] = useState(1);
   const [loading, setLoading] = useState(false);
   const [genLoading, setGenLoading] = useState(false);
+  const [genProgress, setGenProgress] = useState('');
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState<'success' | 'error'>('success');
   const [showFullImage, setShowFullImage] = useState(false);
 
   async function handleGenerateImage() {
     if (!prompt) return;
-    if (images.length >= 10) {
+    const remaining = 10 - images.length;
+    const count = Math.min(imageCount, remaining);
+    if (count <= 0) {
       setMessage('Maximo de 10 imagens por carrossel');
       setMessageType('error');
       return;
     }
     setGenLoading(true);
     setMessage('');
-    try {
-      const result = await api.generateImage(prompt, aspectRatio);
-      setImages((prev) => [...prev, { url: result.imageUrl, prompt }]);
-      setActiveImageIndex(images.length);
-    } catch (err: any) {
-      setMessage(err.message || 'Erro ao gerar imagem');
+    setGenProgress(count > 1 ? `0/${count} imagens geradas...` : '');
+
+    let generated = 0;
+    const newImages: CarouselImage[] = [];
+
+    const promises = Array.from({ length: count }, async (_, i) => {
+      try {
+        const variation = count > 1 ? `${prompt} - variacao ${i + 1} de ${count}` : prompt;
+        const result = await api.generateImage(variation, aspectRatio);
+        newImages.push({ url: result.imageUrl, prompt: variation });
+        generated++;
+        if (count > 1) setGenProgress(`${generated}/${count} imagens geradas...`);
+      } catch {
+        // skip failed
+      }
+    });
+
+    await Promise.all(promises);
+
+    if (newImages.length > 0) {
+      setImages((prev) => [...prev, ...newImages]);
+      setActiveImageIndex(images.length + newImages.length - 1);
+    } else {
+      setMessage('Nenhuma imagem gerada. Tente novamente.');
       setMessageType('error');
     }
+    setGenProgress('');
     setGenLoading(false);
   }
 
@@ -148,10 +171,37 @@ export default function NewPost() {
                   className="input-field resize-none"
                 />
               </div>
+              {/* Quantity selector */}
+              <div>
+                <label className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wider">Quantidade de imagens</label>
+                <div className="flex gap-1.5">
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
+                    <button
+                      key={n}
+                      onClick={() => setImageCount(n)}
+                      disabled={n + images.length > 10}
+                      className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${
+                        imageCount === n
+                          ? 'bg-primary text-white shadow-sm'
+                          : n + images.length > 10
+                          ? 'bg-bg-main text-text-muted/30 cursor-not-allowed'
+                          : 'bg-bg-main text-text-secondary hover:border-primary/50 hover:text-primary'
+                      }`}
+                    >
+                      {n}
+                    </button>
+                  ))}
+                </div>
+                {imageCount >= 2 && (
+                  <p className="text-[10px] text-primary mt-1.5 font-medium flex items-center gap-1">
+                    <Layers className="w-3 h-3" /> Vai gerar {imageCount} imagens (carrossel)
+                  </p>
+                )}
+              </div>
               <div className="flex gap-2">
                 <button onClick={handleGenerateImage} disabled={genLoading || !prompt} className="btn-cta flex-1 justify-center text-xs py-2.5">
-                  {genLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" strokeWidth={1.5} />}
-                  {genLoading ? 'Gerando...' : images.length > 0 ? 'Adicionar Imagem' : 'Gerar Imagem'}
+                  {genLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : imageCount >= 2 ? <Layers className="w-4 h-4" strokeWidth={1.5} /> : <Plus className="w-4 h-4" strokeWidth={1.5} />}
+                  {genLoading ? (genProgress || 'Gerando...') : imageCount >= 2 ? `Gerar Carrossel (${imageCount})` : images.length > 0 ? 'Adicionar Imagem' : 'Gerar Imagem'}
                 </button>
                 <button onClick={handleGenerateCaption} disabled={genLoading || !prompt} className="btn-ghost flex-1 justify-center text-xs py-2.5">
                   <Edit3 className="w-4 h-4" strokeWidth={1.5} />
