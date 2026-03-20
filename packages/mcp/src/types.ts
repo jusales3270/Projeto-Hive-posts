@@ -3,6 +3,7 @@ export interface CreatePostInput {
   image_prompt?: string;
   image_prompts?: string[];
   image_urls?: string[];
+  aspect_ratio?: '1:1' | '4:5' | '9:16';
   scheduled_at?: string;
   hashtags?: string[];
   tone?: string;

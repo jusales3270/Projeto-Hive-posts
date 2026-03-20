@@ -23,12 +23,13 @@ function registerTools(server: McpServer) {
       image_prompt: z.string().optional().describe('Prompt para gerar UMA imagem'),
       image_prompts: z.array(z.string()).min(2).max(10).optional().describe('Array de prompts para gerar carrossel (2-10 imagens)'),
       image_urls: z.array(z.string()).min(2).max(10).optional().describe('Array de URLs de imagens prontas para carrossel'),
+      aspect_ratio: z.enum(['1:1', '4:5', '9:16']).optional().describe('Proporcao da imagem: 1:1 (Feed), 4:5 (Retrato), 9:16 (Stories)'),
       scheduled_at: z.string().optional().describe('Data/hora para agendar (ISO 8601)'),
       hashtags: z.array(z.string()).optional().describe('Lista de hashtags'),
       tone: z.string().optional().describe('Tom: educativo, inspirador, humor, noticia'),
     },
-    async ({ caption, image_prompt, image_prompts, image_urls, scheduled_at, hashtags, tone }) => {
-      const result = await createPost({ caption, image_prompt, image_prompts, image_urls, scheduled_at, hashtags, tone });
+    async ({ caption, image_prompt, image_prompts, image_urls, aspect_ratio, scheduled_at, hashtags, tone }) => {
+      const result = await createPost({ caption, image_prompt, image_prompts, image_urls, aspect_ratio, scheduled_at, hashtags, tone });
       return { content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }] };
     },
   );

@@ -7,10 +7,12 @@ export async function createPost(input: CreatePostInput) {
   let caption = input.caption;
   let hashtags = input.hashtags;
 
+  const aspectRatio = input.aspect_ratio || '1:1';
+
   // Generate multiple images for carousel
   if (input.image_prompts && input.image_prompts.length >= 2) {
     const results = await Promise.allSettled(
-      input.image_prompts.map((prompt) => api.generateImage({ prompt }))
+      input.image_prompts.map((prompt) => api.generateImage({ prompt, aspectRatio }))
     );
     images = results
       .filter((r): r is PromiseFulfilledResult<{ imageUrl: string; minioKey: string }> => r.status === 'fulfilled')
@@ -27,7 +29,7 @@ export async function createPost(input: CreatePostInput) {
     }));
   } else if (input.image_prompt) {
     // Single image (existing behavior)
-    const img = await api.generateImage({ prompt: input.image_prompt });
+    const img = await api.generateImage({ prompt: input.image_prompt, aspectRatio });
     imageUrl = img.imageUrl;
   }
 
@@ -44,6 +46,7 @@ export async function createPost(input: CreatePostInput) {
     caption,
     hashtags,
     source: 'MCP',
+    aspectRatio,
     isCarousel,
     ...(isCarousel ? { images } : { imageUrl }),
     ...(input.scheduled_at ? { scheduledAt: input.scheduled_at } : {}),
