@@ -26,8 +26,8 @@ const envSchema = z.object({
     .string()
     .transform((v) => v === 'true')
     .default('false'),
-  MINIO_ACCESS_KEY: z.string().default('minioadmin'),
-  MINIO_SECRET_KEY: z.string().default('minioadmin_secret'),
+  MINIO_ACCESS_KEY: z.string().transform(v => v || 'minioadmin').default('minioadmin'),
+  MINIO_SECRET_KEY: z.string().transform(v => v || 'minioadmin').default('minioadmin'),
   MINIO_PUBLIC_URL: z.string().default('http://localhost:9000'),
   MINIO_BUCKET: z.string().default('instapost-images'),
 
