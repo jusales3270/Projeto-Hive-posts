@@ -6,6 +6,29 @@ function sleep(ms: number) {
 }
 
 /**
+ * Retry a function on transient Instagram API errors (code 2, is_transient: true).
+ * Uses exponential backoff: 5s, 15s, 30s
+ */
+async function withRetry<T>(fn: () => Promise<T>, label: string, maxRetries = 3): Promise<T> {
+  const delays = [5000, 15000, 30000];
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (err: any) {
+      const isTransient = err.message?.includes('"is_transient":true') || err.message?.includes('"code":2');
+      if (isTransient && attempt < maxRetries) {
+        const delay = delays[attempt] || 30000;
+        console.log(`[Instagram] ${label} transient error (attempt ${attempt + 1}/${maxRetries}), retrying in ${delay / 1000}s...`);
+        await sleep(delay);
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw new Error(`${label} failed after ${maxRetries} retries`);
+}
+
+/**
  * If imageUrl is localhost (MinIO local), upload to a public host
  * so Instagram can download it.
  */
@@ -86,6 +109,24 @@ async function publishContainer(containerId: string, token: string, igUserId: st
   return { id: result.id };
 }
 
+async function createChildContainer(publicUrl: string, token: string, igUserId: string): Promise<string> {
+  const res = await fetch(`https://graph.instagram.com/v21.0/${igUserId}/media`, {
+    method: 'POST',
+    body: new URLSearchParams({
+      image_url: publicUrl,
+      is_carousel_item: 'true',
+      access_token: token,
+    }),
+  });
+  const data = (await res.json()) as any;
+
+  if (!data.id) {
+    throw new Error(`Failed to create child container: ${JSON.stringify(data)}`);
+  }
+
+  return data.id;
+}
+
 async function publishSingleImage(imageUrl: string, caption: string, token: string, igUserId: string) {
   const publicImageUrl = await getPublicImageUrl(imageUrl);
 
@@ -93,25 +134,25 @@ async function publishSingleImage(imageUrl: string, caption: string, token: stri
   console.log('[Instagram] User ID:', igUserId);
   console.log('[Instagram] Image URL:', publicImageUrl);
 
-  const createRes = await fetch(`https://graph.instagram.com/v21.0/${igUserId}/media`, {
-    method: 'POST',
-    body: new URLSearchParams({
-      image_url: publicImageUrl,
-      caption,
-      access_token: token,
-    }),
-  });
-  const createData = (await createRes.json()) as any;
-  const containerId = createData.id;
+  const createData = await withRetry(async () => {
+    const createRes = await fetch(`https://graph.instagram.com/v21.0/${igUserId}/media`, {
+      method: 'POST',
+      body: new URLSearchParams({
+        image_url: publicImageUrl,
+        caption,
+        access_token: token,
+      }),
+    });
+    const data = (await createRes.json()) as any;
+    console.log('[Instagram] Create container response:', JSON.stringify(data));
+    if (!data.id) {
+      throw new Error(`Failed to create media container: ${JSON.stringify(data)}`);
+    }
+    return data;
+  }, 'Create single container');
 
-  console.log('[Instagram] Create container response:', JSON.stringify(createData));
-
-  if (!containerId) {
-    throw new Error(`Failed to create media container: ${JSON.stringify(createData)}`);
-  }
-
-  await pollContainerStatus(containerId, token);
-  return await publishContainer(containerId, token, igUserId);
+  await pollContainerStatus(createData.id, token);
+  return await publishContainer(createData.id, token, igUserId);
 }
 
 async function publishCarousel(
@@ -122,62 +163,64 @@ async function publishCarousel(
 ) {
   console.log(`[Instagram] Creating carousel with ${images.length} images...`);
 
-  // Step 1: Create individual container for each image (NO caption on children)
-  const childContainerIds: string[] = [];
-
+  // Step 1: Upload all images to public URLs first
+  const publicUrls: string[] = [];
   for (const img of images) {
     const publicUrl = await getPublicImageUrl(img.imageUrl);
-    console.log(`[Instagram] Creating child container for: ${publicUrl}`);
-
-    const res = await fetch(`https://graph.instagram.com/v21.0/${igUserId}/media`, {
-      method: 'POST',
-      body: new URLSearchParams({
-        image_url: publicUrl,
-        is_carousel_item: 'true',
-        access_token: token,
-      }),
-    });
-    const data = (await res.json()) as any;
-
-    if (!data.id) {
-      throw new Error(`Failed to create child container: ${JSON.stringify(data)}`);
-    }
-
-    childContainerIds.push(data.id);
-    // Small delay to avoid rate limiting
-    await sleep(1000);
+    publicUrls.push(publicUrl);
   }
 
-  // Step 2: Poll all child containers until FINISHED
+  // Step 2: Create individual container for each image with retry
+  const childContainerIds: string[] = [];
+
+  for (let i = 0; i < publicUrls.length; i++) {
+    const publicUrl = publicUrls[i];
+    console.log(`[Instagram] Creating child container ${i + 1}/${publicUrls.length}: ${publicUrl}`);
+
+    const childId = await withRetry(
+      () => createChildContainer(publicUrl, token, igUserId),
+      `Child container ${i + 1}`,
+    );
+
+    childContainerIds.push(childId);
+    // Delay between child creations to avoid rate limiting (2s for carousels with many images)
+    if (i < publicUrls.length - 1) {
+      await sleep(2000);
+    }
+  }
+
+  // Step 3: Poll all child containers until FINISHED
   for (const childId of childContainerIds) {
     await pollContainerStatus(childId, token);
   }
 
-  // Step 3: Create carousel container (children must be comma-separated)
+  // Step 4: Create carousel container (children must be comma-separated)
   console.log('[Instagram] Creating carousel container...');
   console.log('[Instagram] Children IDs:', childContainerIds);
-  const params = new URLSearchParams({
-    media_type: 'CAROUSEL',
-    children: childContainerIds.join(','),
-    caption,
-    access_token: token,
-  });
 
-  const carouselRes = await fetch(`https://graph.instagram.com/v21.0/${igUserId}/media`, {
-    method: 'POST',
-    body: params,
-  });
-  const carouselData = (await carouselRes.json()) as any;
-  console.log('[Instagram] Carousel container response:', JSON.stringify(carouselData));
+  const carouselData = await withRetry(async () => {
+    const params = new URLSearchParams({
+      media_type: 'CAROUSEL',
+      children: childContainerIds.join(','),
+      caption,
+      access_token: token,
+    });
+    const carouselRes = await fetch(`https://graph.instagram.com/v21.0/${igUserId}/media`, {
+      method: 'POST',
+      body: params,
+    });
+    const data = (await carouselRes.json()) as any;
+    console.log('[Instagram] Carousel container response:', JSON.stringify(data));
+    if (!data.id) {
+      throw new Error(`Failed to create carousel container: ${JSON.stringify(data)}`);
+    }
+    return data;
+  }, 'Carousel container');
 
-  if (!carouselData.id) {
-    throw new Error(`Failed to create carousel container: ${JSON.stringify(carouselData)}`);
-  }
-
-  // Step 4: Poll carousel container
+  // Step 5: Poll carousel container
   await pollContainerStatus(carouselData.id, token);
 
-  // Step 5: Publish
+  // Step 6: Publish
   return await publishContainer(carouselData.id, token, igUserId);
 }
 
