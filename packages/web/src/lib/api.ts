@@ -105,6 +105,36 @@ export const api = {
 
   instagramStatus: () => request<{ connected: boolean }>('/api/instagram/status'),
 
+  // Tasks
+  listTasks: (params?: Record<string, string>) => {
+    const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+    return request<{ items: any[]; total: number; page: number; limit: number }>(`/api/tasks${qs}`);
+  },
+  getTask: (id: string) => request<any>(`/api/tasks/${id}`),
+  createTask: (body: Record<string, unknown>) =>
+    request('/api/tasks', { method: 'POST', body: JSON.stringify(body) }),
+  updateTask: (id: string, body: Record<string, unknown>) =>
+    request(`/api/tasks/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+  deleteTask: (id: string) => request(`/api/tasks/${id}`, { method: 'DELETE' }),
+
+  // Projects
+  listProjects: (params?: Record<string, string>) => {
+    const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+    return request<{ items: any[]; total: number; page: number; limit: number }>(`/api/projects${qs}`);
+  },
+  getProject: (id: string) => request<any>(`/api/projects/${id}`),
+  createProject: (body: Record<string, unknown>) =>
+    request('/api/projects', { method: 'POST', body: JSON.stringify(body) }),
+  updateProject: (id: string, body: Record<string, unknown>) =>
+    request(`/api/projects/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+  deleteProject: (id: string) => request(`/api/projects/${id}`, { method: 'DELETE' }),
+  addModule: (projectId: string, body: Record<string, unknown>) =>
+    request(`/api/projects/${projectId}/modules`, { method: 'POST', body: JSON.stringify(body) }),
+  updateModule: (projectId: string, moduleId: string, body: Record<string, unknown>) =>
+    request(`/api/projects/${projectId}/modules/${moduleId}`, { method: 'PUT', body: JSON.stringify(body) }),
+  deleteModule: (projectId: string, moduleId: string) =>
+    request(`/api/projects/${projectId}/modules/${moduleId}`, { method: 'DELETE' }),
+
   instagramProfile: () =>
     request<{
       profile: {

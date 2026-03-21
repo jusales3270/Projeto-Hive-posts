@@ -61,4 +61,13 @@ export const api = {
     }),
 
   instagramStatus: () => request<{ connected: boolean }>('/api/instagram/status'),
+
+  // Tasks
+  listTasks: (params?: string) =>
+    request<{ items: any[]; total: number }>(`/api/tasks?${params || 'limit=10'}`),
+  getTask: (id: string) => request<any>(`/api/tasks/${id}`),
+  createTask: (body: Record<string, unknown>) =>
+    request('/api/tasks', { method: 'POST', body: JSON.stringify(body) }),
+  updateTask: (id: string, body: Record<string, unknown>) =>
+    request(`/api/tasks/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
 };

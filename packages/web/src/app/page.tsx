@@ -20,6 +20,8 @@ import {
   ExternalLink,
   Image as ImageIcon,
   TrendingUp,
+  CheckSquare,
+  FolderKanban,
 } from 'lucide-react';
 
 interface Stats {
@@ -318,7 +320,7 @@ export default function Dashboard() {
       )}
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
         <Link href="/posts/new" className="card p-5 border border-border hover:border-primary hover:-translate-y-0.5 group cursor-pointer">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-gradient-to-br from-primary/10 to-accent-pink/10 group-hover:from-primary/20 group-hover:to-accent-pink/20 transition-colors">
@@ -326,7 +328,7 @@ export default function Dashboard() {
             </div>
             <div>
               <p className="text-[15px] font-bold text-text-primary">Criar Post</p>
-              <p className="text-[13px] text-text-secondary">Gerar imagem e legenda com IA</p>
+              <p className="text-[13px] text-text-secondary">IA gera imagem</p>
             </div>
           </div>
         </Link>
@@ -337,7 +339,29 @@ export default function Dashboard() {
             </div>
             <div>
               <p className="text-[15px] font-bold text-text-primary">Calendario</p>
-              <p className="text-[13px] text-text-secondary">Ver agenda de publicacoes</p>
+              <p className="text-[13px] text-text-secondary">Publicacoes</p>
+            </div>
+          </div>
+        </Link>
+        <Link href="/tasks" className="card p-5 border border-border hover:border-primary hover:-translate-y-0.5 group cursor-pointer">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-amber-50 group-hover:bg-amber-100 transition-colors">
+              <CheckSquare className="w-5 h-5 text-amber-600" strokeWidth={1.5} />
+            </div>
+            <div>
+              <p className="text-[15px] font-bold text-text-primary">Tarefas</p>
+              <p className="text-[13px] text-text-secondary">Gravacoes</p>
+            </div>
+          </div>
+        </Link>
+        <Link href="/projects" className="card p-5 border border-border hover:border-primary hover:-translate-y-0.5 group cursor-pointer">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-purple-50 group-hover:bg-purple-100 transition-colors">
+              <FolderKanban className="w-5 h-5 text-purple-600" strokeWidth={1.5} />
+            </div>
+            <div>
+              <p className="text-[15px] font-bold text-text-primary">Projetos</p>
+              <p className="text-[13px] text-text-secondary">Cursos</p>
             </div>
           </div>
         </Link>
@@ -347,8 +371,8 @@ export default function Dashboard() {
               <Settings className="w-5 h-5 text-text-secondary" strokeWidth={1.5} />
             </div>
             <div>
-              <p className="text-[15px] font-bold text-text-primary">Configuracoes</p>
-              <p className="text-[13px] text-text-secondary">Instagram, Bot e API</p>
+              <p className="text-[15px] font-bold text-text-primary">Config</p>
+              <p className="text-[13px] text-text-secondary">Instagram, Bot</p>
             </div>
           </div>
         </Link>

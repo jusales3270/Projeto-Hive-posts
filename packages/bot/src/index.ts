@@ -9,6 +9,7 @@ import { listarCommand } from './commands/listar';
 import { publicarCommand } from './commands/publicar';
 import { cancelarCommand } from './commands/cancelar';
 import { statusCommand } from './commands/status';
+import { tarefasCommand } from './commands/tarefas';
 import { handleCallbackQuery } from './callbacks';
 import { api } from './api-client';
 import { InlineKeyboard } from 'grammy';
@@ -34,6 +35,7 @@ bot.command('listar', listarCommand);
 bot.command('publicar', publicarCommand);
 bot.command('cancelar', cancelarCommand);
 bot.command('status', statusCommand);
+bot.command('tarefas', tarefasCommand);
 
 // Callback queries (inline buttons)
 bot.on('callback_query:data', handleCallbackQuery);

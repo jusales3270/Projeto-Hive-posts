@@ -7,8 +7,11 @@ import authRoutes from './routes/auth.routes';
 import postRoutes from './routes/post.routes';
 import generateRoutes from './routes/generate.routes';
 import uploadRoutes from './routes/upload.routes';
+import taskRoutes from './routes/task.routes';
+import projectRoutes from './routes/project.routes';
 import { publishWorker } from './jobs/publish.worker';
 import { tokenRefreshWorker, initTokenRefreshJob } from './jobs/token-refresh.worker';
+import { taskReminderWorker } from './jobs/task-reminder.worker';
 
 const app = express();
 
@@ -21,6 +24,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/generate', generateRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/tasks', taskRoutes);
+app.use('/api/projects', projectRoutes);
 
 // Health check with env diagnostics
 app.get('/api/health', (_req, res) => {
@@ -169,6 +174,10 @@ async function start() {
 
   tokenRefreshWorker.on('failed', (job, err) => {
     console.error(`Token refresh job ${job?.id} failed:`, err.message);
+  });
+
+  taskReminderWorker.on('failed', (job, err) => {
+    console.error(`Task reminder job ${job?.id} failed:`, err.message);
   });
 
   app.listen(env.PORT, () => {

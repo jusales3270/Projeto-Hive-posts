@@ -11,6 +11,7 @@ Comandos disponiveis:
 /listar - Listar proximos posts agendados
 /publicar [id] - Publicar imediatamente
 /cancelar [id] - Cancelar agendamento
-/status - Status da conexao Instagram`,
+/status - Status da conexao Instagram
+/tarefas - Listar tarefas dos proximos 7 dias`,
   );
 }

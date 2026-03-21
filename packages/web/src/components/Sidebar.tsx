@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, PlusSquare, FileText, Calendar, Settings, LogOut, Zap } from 'lucide-react';
+import { Home, PlusSquare, FileText, Calendar, CheckSquare, FolderKanban, Settings, LogOut, Zap } from 'lucide-react';
 import { useAuth } from './AuthProvider';
 
 const links = [
@@ -10,6 +10,8 @@ const links = [
   { href: '/posts/new', label: 'Novo Post', icon: PlusSquare },
   { href: '/posts', label: 'Posts', icon: FileText },
   { href: '/calendar', label: 'Calendario', icon: Calendar },
+  { href: '/tasks', label: 'Tarefas', icon: CheckSquare },
+  { href: '/projects', label: 'Projetos', icon: FolderKanban },
   { href: '/settings', label: 'Configuracoes', icon: Settings },
 ];
 

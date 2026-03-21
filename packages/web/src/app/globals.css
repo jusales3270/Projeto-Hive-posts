@@ -236,6 +236,59 @@
     background-color: rgba(214, 48, 49, 0.08);
     border-color: rgba(214, 48, 49, 0.15);
   }
+
+  /* Task status badges */
+  .badge-pending {
+    background-color: rgba(99, 110, 114, 0.1);
+    color: #636E72;
+  }
+
+  .badge-in-progress {
+    background-color: rgba(9, 132, 227, 0.1);
+    color: #0984E3;
+  }
+
+  .badge-completed {
+    background-color: rgba(0, 184, 148, 0.1);
+    color: #00B894;
+  }
+
+  .badge-cancelled {
+    background-color: rgba(214, 48, 49, 0.1);
+    color: #D63031;
+  }
+
+  /* Task priority badges */
+  .badge-low {
+    background-color: rgba(0, 184, 148, 0.1);
+    color: #00B894;
+  }
+
+  .badge-medium {
+    background-color: rgba(9, 132, 227, 0.1);
+    color: #0984E3;
+  }
+
+  .badge-high {
+    background-color: rgba(253, 203, 110, 0.3);
+    color: #E17055;
+  }
+
+  .badge-urgent {
+    background-color: rgba(214, 48, 49, 0.1);
+    color: #D63031;
+  }
+
+  /* Project status badges */
+  .badge-planning {
+    background-color: rgba(253, 203, 110, 0.2);
+    color: #FDCB6E;
+  }
+
+  .badge-archived {
+    background-color: rgba(99, 110, 114, 0.1);
+    color: #636E72;
+  }
 }
 
 /* Modal animations */

@@ -13,6 +13,8 @@ model User {
   password       String
   name           String?
   posts          Post[]
+  tasks          Task[]
+  projects       Project[]
   instagramToken InstagramToken?
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
@@ -87,4 +89,100 @@ enum PostSource {
   WEB
   TELEGRAM
   MCP
+}
+
+// === Task & Project enums ===
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TaskPlatform {
+  YOUTUBE
+  INSTAGRAM
+  META_ADS
+  TIKTOK
+  OTHER
+}
+
+enum ProjectStatus {
+  PLANNING
+  IN_PROGRESS
+  COMPLETED
+  ARCHIVED
+}
+
+// === Task & Project models ===
+
+model Task {
+  id              String       @id @default(uuid())
+  title           String
+  description     String?
+  platform        TaskPlatform @default(OTHER)
+  status          TaskStatus   @default(PENDING)
+  priority        TaskPriority @default(MEDIUM)
+  recordDate      DateTime?
+  publishDate     DateTime?
+  script          String?
+  driveLink       String?
+  isSponsored     Boolean      @default(false)
+  sponsorName     String?
+  sponsorBriefing String?
+  sponsorContact  String?
+  sponsorDeadline DateTime?
+  userId          String
+  user            User         @relation(fields: [userId], references: [id])
+  projectId       String?
+  project         Project?     @relation(fields: [projectId], references: [id])
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([priority])
+  @@index([recordDate])
+  @@index([publishDate])
+  @@index([projectId])
+}
+
+model Project {
+  id          String        @id @default(uuid())
+  title       String
+  description String?
+  status      ProjectStatus @default(PLANNING)
+  userId      String
+  user        User          @relation(fields: [userId], references: [id])
+  modules     ProjectModule[]
+  tasks       Task[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+model ProjectModule {
+  id         String   @id @default(uuid())
+  title      String
+  content    String?
+  order      Int      @default(0)
+  isRecorded Boolean  @default(false)
+  driveLink  String?
+  projectId  String
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([projectId])
+  @@unique([projectId, order])
 }
