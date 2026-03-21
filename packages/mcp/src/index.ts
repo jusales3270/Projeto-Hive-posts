@@ -11,6 +11,18 @@ import { publishNow } from './tools/publishNow';
 import { uploadImage } from './tools/uploadImage';
 import { getAnalytics } from './tools/getAnalytics';
 import { addImageToPost } from './tools/addImageToPost';
+import { createTask } from './tools/createTask';
+import { listTasks } from './tools/listTasks';
+import { updateTask } from './tools/updateTask';
+import { deleteTask } from './tools/deleteTask';
+import { createProject } from './tools/createProject';
+import { listProjects } from './tools/listProjects';
+import { getProject } from './tools/getProject';
+import { updateProject } from './tools/updateProject';
+import { deleteProject } from './tools/deleteProject';
+import { addModule } from './tools/addModule';
+import { updateModule } from './tools/updateModule';
+import { deleteModule } from './tools/deleteModule';
 
 const PORT = parseInt(process.env.PORT || '3002', 10);
 
@@ -138,6 +150,210 @@ function registerTools(server: McpServer) {
     },
     async ({ period }) => {
       const result = await getAnalytics({ period });
+      return { content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }] };
+    },
+  );
+
+  // ── Task tools ──
+
+  server.tool(
+    'create_task',
+    'Cria uma tarefa de producao de conteudo (gravacao de video, post patrocinado, etc)',
+    {
+      title: z.string().describe('Titulo da tarefa'),
+      description: z.string().optional().describe('Descricao detalhada'),
+      platform: z.enum(['YOUTUBE', 'INSTAGRAM', 'META_ADS', 'TIKTOK', 'OTHER']).describe('Plataforma alvo'),
+      priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional().describe('Prioridade (padrao: MEDIUM)'),
+      recordDate: z.string().optional().describe('Data/hora de gravacao (ISO 8601)'),
+      publishDate: z.string().optional().describe('Data/hora de publicacao (ISO 8601)'),
+      script: z.string().optional().describe('Roteiro do video'),
+      driveLink: z.string().optional().describe('Link do Google Drive'),
+      isSponsored: z.boolean().optional().describe('Se e conteudo patrocinado'),
+      sponsorName: z.string().optional().describe('Nome da empresa patrocinadora'),
+      sponsorBriefing: z.string().optional().describe('Briefing do patrocinador'),
+      sponsorContact: z.string().optional().describe('Contato do patrocinador'),
+      sponsorDeadline: z.string().optional().describe('Deadline do patrocinador (ISO 8601)'),
+      projectId: z.string().optional().describe('ID do projeto associado'),
+    },
+    async (input) => {
+      const result = await createTask(input);
+      return { content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }] };
+    },
+  );
+
+  server.tool(
+    'list_tasks',
+    'Lista tarefas de producao com filtros (status, prioridade, plataforma, datas)',
+    {
+      status: z.enum(['PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED']).optional().describe('Filtrar por status'),
+      priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional().describe('Filtrar por prioridade'),
+      platform: z.enum(['YOUTUBE', 'INSTAGRAM', 'META_ADS', 'TIKTOK', 'OTHER']).optional().describe('Filtrar por plataforma'),
+      projectId: z.string().optional().describe('Filtrar por projeto'),
+      from: z.string().optional().describe('Data inicial (ISO 8601)'),
+      to: z.string().optional().describe('Data final (ISO 8601)'),
+      limit: z.number().optional().describe('Quantidade por pagina'),
+      offset: z.number().optional().describe('Offset para paginacao'),
+    },
+    async (input) => {
+      const result = await listTasks(input);
+      return { content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }] };
+    },
+  );
+
+  server.tool(
+    'update_task',
+    'Atualiza uma tarefa existente (status, datas, roteiro, dados de patrocinio, etc)',
+    {
+      task_id: z.string().describe('ID da tarefa'),
+      title: z.string().optional().describe('Novo titulo'),
+      description: z.string().optional().describe('Nova descricao'),
+      status: z.enum(['PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED']).optional().describe('Novo status'),
+      priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional().describe('Nova prioridade'),
+      platform: z.enum(['YOUTUBE', 'INSTAGRAM', 'META_ADS', 'TIKTOK', 'OTHER']).optional().describe('Nova plataforma'),
+      recordDate: z.string().optional().describe('Nova data de gravacao (ISO 8601)'),
+      publishDate: z.string().optional().describe('Nova data de publicacao (ISO 8601)'),
+      script: z.string().optional().describe('Novo roteiro'),
+      driveLink: z.string().optional().describe('Novo link do Drive'),
+      isSponsored: z.boolean().optional().describe('Marcar como patrocinado'),
+      sponsorName: z.string().optional().describe('Nome do patrocinador'),
+      sponsorBriefing: z.string().optional().describe('Briefing do patrocinador'),
+      sponsorContact: z.string().optional().describe('Contato do patrocinador'),
+      sponsorDeadline: z.string().optional().describe('Deadline do patrocinador (ISO 8601)'),
+      projectId: z.string().optional().describe('ID do projeto associado'),
+    },
+    async (input) => {
+      const result = await updateTask(input);
+      return { content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }] };
+    },
+  );
+
+  server.tool(
+    'delete_task',
+    'Deleta uma tarefa',
+    {
+      task_id: z.string().describe('ID da tarefa para deletar'),
+    },
+    async ({ task_id }) => {
+      const result = await deleteTask({ task_id });
+      return { content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }] };
+    },
+  );
+
+  // ── Project tools ──
+
+  server.tool(
+    'create_project',
+    'Cria um projeto (curso, serie de videos) com modulos opcionais',
+    {
+      title: z.string().describe('Titulo do projeto'),
+      description: z.string().optional().describe('Descricao do projeto'),
+      modules: z.array(z.object({
+        title: z.string().describe('Titulo do modulo'),
+        content: z.string().optional().describe('Conteudo/descricao do modulo'),
+      })).optional().describe('Lista de modulos iniciais'),
+    },
+    async (input) => {
+      const result = await createProject(input);
+      return { content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }] };
+    },
+  );
+
+  server.tool(
+    'list_projects',
+    'Lista projetos com filtro por status',
+    {
+      status: z.enum(['PLANNING', 'IN_PROGRESS', 'COMPLETED', 'ARCHIVED']).optional().describe('Filtrar por status'),
+      limit: z.number().optional().describe('Quantidade por pagina'),
+      offset: z.number().optional().describe('Offset para paginacao'),
+    },
+    async (input) => {
+      const result = await listProjects(input);
+      return { content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }] };
+    },
+  );
+
+  server.tool(
+    'get_project',
+    'Retorna detalhes de um projeto com seus modulos e tarefas',
+    {
+      project_id: z.string().describe('ID do projeto'),
+    },
+    async ({ project_id }) => {
+      const result = await getProject({ project_id });
+      return { content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }] };
+    },
+  );
+
+  server.tool(
+    'update_project',
+    'Atualiza titulo, descricao ou status de um projeto',
+    {
+      project_id: z.string().describe('ID do projeto'),
+      title: z.string().optional().describe('Novo titulo'),
+      description: z.string().optional().describe('Nova descricao'),
+      status: z.enum(['PLANNING', 'IN_PROGRESS', 'COMPLETED', 'ARCHIVED']).optional().describe('Novo status'),
+    },
+    async (input) => {
+      const result = await updateProject(input);
+      return { content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }] };
+    },
+  );
+
+  server.tool(
+    'delete_project',
+    'Deleta um projeto e todos seus modulos',
+    {
+      project_id: z.string().describe('ID do projeto para deletar'),
+    },
+    async ({ project_id }) => {
+      const result = await deleteProject({ project_id });
+      return { content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }] };
+    },
+  );
+
+  // ── Module tools ──
+
+  server.tool(
+    'add_module',
+    'Adiciona um modulo a um projeto existente',
+    {
+      project_id: z.string().describe('ID do projeto'),
+      title: z.string().describe('Titulo do modulo'),
+      content: z.string().optional().describe('Conteudo/descricao do modulo'),
+      order: z.number().optional().describe('Posicao do modulo na lista'),
+    },
+    async (input) => {
+      const result = await addModule(input);
+      return { content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }] };
+    },
+  );
+
+  server.tool(
+    'update_module',
+    'Atualiza um modulo (titulo, conteudo, marcar como gravado, link do Drive)',
+    {
+      project_id: z.string().describe('ID do projeto'),
+      module_id: z.string().describe('ID do modulo'),
+      title: z.string().optional().describe('Novo titulo'),
+      content: z.string().optional().describe('Novo conteudo'),
+      isRecorded: z.boolean().optional().describe('Marcar como gravado (true/false)'),
+      driveLink: z.string().optional().describe('Link do Google Drive com o video gravado'),
+    },
+    async (input) => {
+      const result = await updateModule(input);
+      return { content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }] };
+    },
+  );
+
+  server.tool(
+    'delete_module',
+    'Remove um modulo de um projeto',
+    {
+      project_id: z.string().describe('ID do projeto'),
+      module_id: z.string().describe('ID do modulo para remover'),
+    },
+    async ({ project_id, module_id }) => {
+      const result = await deleteModule({ project_id, module_id });
       return { content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }] };
     },
   );

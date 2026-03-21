@@ -59,4 +59,48 @@ export const api = {
 
   addImageToPost: (postId: string, image: { imageUrl: string; order?: number }) =>
     request(`/api/posts/${postId}/images`, { method: 'POST', body: JSON.stringify(image) }),
+
+  // Tasks
+  createTask: (body: Record<string, unknown>) =>
+    request('/api/tasks', { method: 'POST', body: JSON.stringify(body) }),
+
+  listTasks: (params: Record<string, string>) => {
+    const qs = new URLSearchParams(params).toString();
+    return request<{ items: any[]; total: number }>(`/api/tasks?${qs}`);
+  },
+
+  getTask: (id: string) => request<any>(`/api/tasks/${id}`),
+
+  updateTask: (id: string, body: Record<string, unknown>) =>
+    request(`/api/tasks/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+
+  deleteTask: (id: string) =>
+    request(`/api/tasks/${id}`, { method: 'DELETE' }),
+
+  // Projects
+  createProject: (body: Record<string, unknown>) =>
+    request('/api/projects', { method: 'POST', body: JSON.stringify(body) }),
+
+  listProjects: (params: Record<string, string>) => {
+    const qs = new URLSearchParams(params).toString();
+    return request<{ items: any[]; total: number }>(`/api/projects?${qs}`);
+  },
+
+  getProject: (id: string) => request<any>(`/api/projects/${id}`),
+
+  updateProject: (id: string, body: Record<string, unknown>) =>
+    request(`/api/projects/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+
+  deleteProject: (id: string) =>
+    request(`/api/projects/${id}`, { method: 'DELETE' }),
+
+  // Project Modules
+  addModule: (projectId: string, body: Record<string, unknown>) =>
+    request(`/api/projects/${projectId}/modules`, { method: 'POST', body: JSON.stringify(body) }),
+
+  updateModule: (projectId: string, moduleId: string, body: Record<string, unknown>) =>
+    request(`/api/projects/${projectId}/modules/${moduleId}`, { method: 'PUT', body: JSON.stringify(body) }),
+
+  deleteModule: (projectId: string, moduleId: string) =>
+    request(`/api/projects/${projectId}/modules/${moduleId}`, { method: 'DELETE' }),
 };
