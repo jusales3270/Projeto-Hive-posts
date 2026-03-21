@@ -87,9 +87,16 @@ app.get('/api/instagram/profile', async (_req, res) => {
       const profileRes = await fetch(`${fbBase}/${igUserId}?fields=id,username,name,biography,profile_picture_url,followers_count,follows_count,media_count,website&access_token=${token}`);
       const profile = await profileRes.json() as any;
       if (!profile.error) {
-        const mediaRes = await fetch(`${fbBase}/${igUserId}/media?fields=id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,like_count,comments_count&limit=6&access_token=${token}`);
+        const mediaRes = await fetch(`${fbBase}/${igUserId}/media?fields=id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,like_count,comments_count&limit=12&access_token=${token}`);
         const media = await mediaRes.json() as any;
-        res.json({ success: true, data: { profile, recentMedia: media.data || [] } });
+        const normalizedMedia = (media.data || []).map((m: any) => ({
+          ...m,
+          like_count: m.like_count ?? 0,
+          comments_count: m.comments_count ?? 0,
+          media_url: m.media_url || m.thumbnail_url || null,
+        }));
+        console.log('[Instagram] Business API - Media count:', normalizedMedia.length);
+        res.json({ success: true, data: { profile, recentMedia: normalizedMedia } });
         return;
       }
       console.log('[Instagram] Business API failed, trying Instagram API:', profile.error.message);
@@ -99,7 +106,7 @@ app.get('/api/instagram/profile', async (_req, res) => {
     const igBase = 'https://graph.instagram.com/v21.0';
     const [profileRes, mediaRes] = await Promise.all([
       fetch(`${igBase}/me?fields=id,username,name,account_type,profile_picture_url,followers_count,follows_count,media_count,biography,website&access_token=${token}`),
-      fetch(`${igBase}/me/media?fields=id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,like_count,comments_count&limit=6&access_token=${token}`),
+      fetch(`${igBase}/me/media?fields=id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,like_count,comments_count&limit=12&access_token=${token}`),
     ]);
     const profile = await profileRes.json() as any;
     const media = await mediaRes.json() as any;
@@ -108,7 +115,23 @@ app.get('/api/instagram/profile', async (_req, res) => {
       res.json({ success: false, error: profile.error.message });
       return;
     }
-    res.json({ success: true, data: { profile, recentMedia: media.data || [] } });
+
+    // Normalize media data: ensure like_count/comments_count exist, fix media_url for carousels
+    const normalizedMedia = (media.data || []).map((m: any) => ({
+      ...m,
+      like_count: m.like_count ?? 0,
+      comments_count: m.comments_count ?? 0,
+      // CAROUSEL_ALBUM doesn't return media_url, use thumbnail_url as fallback
+      media_url: m.media_url || m.thumbnail_url || null,
+    }));
+
+    console.log('[Instagram] Profile:', JSON.stringify({ id: profile.id, username: profile.username, followers: profile.followers_count, media_count: profile.media_count }));
+    console.log('[Instagram] Media count returned:', normalizedMedia.length);
+    normalizedMedia.slice(0, 3).forEach((m: any) => {
+      console.log(`[Instagram] Media ${m.id}: type=${m.media_type}, likes=${m.like_count}, comments=${m.comments_count}, has_url=${!!m.media_url}`);
+    });
+
+    res.json({ success: true, data: { profile, recentMedia: normalizedMedia } });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err?.message || 'Failed to fetch Instagram data' });
   }

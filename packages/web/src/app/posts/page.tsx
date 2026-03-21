@@ -44,6 +44,14 @@ export default function PostsList() {
 
   useEffect(() => { loadPosts(); }, [filter, page]);
 
+  // Auto-refresh every 5s when there are posts being published
+  useEffect(() => {
+    const hasPublishing = posts.some((p) => p.status === 'PUBLISHING');
+    if (!hasPublishing) return;
+    const interval = setInterval(loadPosts, 5000);
+    return () => clearInterval(interval);
+  }, [posts]);
+
   async function handleDelete(id: string) {
     if (!confirm('Deletar este post?')) return;
     try {
@@ -58,7 +66,8 @@ export default function PostsList() {
     setActionLoading(id);
     try {
       await api.publishPost(id);
-      await loadPosts();
+      // Update local state immediately (API now returns instantly, publishes in background)
+      setPosts((prev) => prev.map((p) => p.id === id ? { ...p, status: 'PUBLISHING' } : p));
     } catch (err: any) { alert(err.message || 'Erro ao publicar'); }
     setActionLoading(null);
   }
@@ -195,6 +204,12 @@ export default function PostsList() {
                           Agendar
                         </button>
                       </>
+                    )}
+                    {post.status === 'PUBLISHING' && (
+                      <span className="px-3 py-1.5 rounded-badge text-xs font-medium bg-amber-50 text-amber-600 flex items-center gap-1.5">
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        Publicando...
+                      </span>
                     )}
                     {post.status === 'SCHEDULED' && (
                       <span className="px-3 py-1.5 rounded-badge text-xs font-medium bg-blue-50 text-status-scheduled">

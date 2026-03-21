@@ -45,7 +45,7 @@ interface IGMedia {
   id: string;
   caption: string;
   media_type: string;
-  media_url: string;
+  media_url: string | null;
   permalink: string;
   timestamp: string;
   like_count: number;
@@ -140,8 +140,10 @@ export default function Dashboard() {
     load();
   }, []);
 
-  const totalEngagement = igMedia.reduce((sum, m) => sum + (m.like_count || 0) + (m.comments_count || 0), 0);
+  const totalEngagement = igMedia.reduce((sum, m) => sum + (m.like_count ?? 0) + (m.comments_count ?? 0), 0);
   const avgEngagement = igMedia.length > 0 ? Math.round(totalEngagement / igMedia.length) : 0;
+  const totalLikes = igMedia.reduce((sum, m) => sum + (m.like_count ?? 0), 0);
+  const totalComments = igMedia.reduce((sum, m) => sum + (m.comments_count ?? 0), 0);
 
   return (
     <div className="max-w-7xl mx-auto animate-fade-in">
@@ -158,7 +160,7 @@ export default function Dashboard() {
       </div>
 
       {/* Metric Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4 mb-8">
         {METRIC_CARDS.map((card) => {
           const Icon = card.icon;
           const value = stats[card.key as keyof Stats];
@@ -174,6 +176,23 @@ export default function Dashboard() {
             </div>
           );
         })}
+        {/* Instagram engagement cards */}
+        <div className="card p-5 relative overflow-hidden group hover:-translate-y-0.5">
+          <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[#E1306C] to-[#F77737]" />
+          <div className="w-10 h-10 rounded-xl bg-pink-50 flex items-center justify-center mb-3">
+            <Heart className="w-5 h-5 text-[#E1306C]" strokeWidth={1.5} />
+          </div>
+          <p className="text-card-number text-text-primary">{formatNumber(totalLikes)}</p>
+          <p className="text-card-label text-text-secondary uppercase tracking-wider mt-1">CURTIDAS IG</p>
+        </div>
+        <div className="card p-5 relative overflow-hidden group hover:-translate-y-0.5">
+          <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[#833AB4] to-[#E1306C]" />
+          <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center mb-3">
+            <MessageCircle className="w-5 h-5 text-[#833AB4]" strokeWidth={1.5} />
+          </div>
+          <p className="text-card-number text-text-primary">{formatNumber(totalComments)}</p>
+          <p className="text-card-label text-text-secondary uppercase tracking-wider mt-1">COMENTARIOS IG</p>
+        </div>
       </div>
 
       {/* Content Sections */}
@@ -315,6 +334,18 @@ export default function Dashboard() {
                 </p>
               </div>
               <div className="text-center">
+                <p className="text-2xl font-bold text-text-primary">{formatNumber(totalLikes)}</p>
+                <p className="text-xs text-text-secondary flex items-center gap-1 justify-center">
+                  <Heart className="w-3 h-3" /> Curtidas
+                </p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-text-primary">{formatNumber(totalComments)}</p>
+                <p className="text-xs text-text-secondary flex items-center gap-1 justify-center">
+                  <MessageCircle className="w-3 h-3" /> Comentarios
+                </p>
+              </div>
+              <div className="text-center">
                 <p className="text-2xl font-bold text-text-primary">{avgEngagement}</p>
                 <p className="text-xs text-text-secondary flex items-center gap-1 justify-center">
                   <Heart className="w-3 h-3" /> Eng. Medio
@@ -348,7 +379,7 @@ export default function Dashboard() {
                 </a>
               </div>
               <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-                {igMedia.slice(0, 6).map((media) => (
+                {igMedia.map((media) => (
                   <a
                     key={media.id}
                     href={media.permalink}
@@ -356,18 +387,24 @@ export default function Dashboard() {
                     rel="noopener noreferrer"
                     className="group relative aspect-square rounded-xl overflow-hidden bg-bg-main"
                   >
-                    <img
-                      src={media.media_url}
-                      alt=""
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
+                    {media.media_url ? (
+                      <img
+                        src={media.media_url}
+                        alt=""
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-bg-card">
+                        <ImageIcon className="w-8 h-8 text-text-muted" />
+                      </div>
+                    )}
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
                       <div className="flex items-center gap-3 text-white text-xs font-semibold">
                         <span className="flex items-center gap-1">
-                          <Heart className="w-3.5 h-3.5" fill="white" /> {media.like_count}
+                          <Heart className="w-3.5 h-3.5" fill="white" /> {media.like_count ?? 0}
                         </span>
                         <span className="flex items-center gap-1">
-                          <MessageCircle className="w-3.5 h-3.5" fill="white" /> {media.comments_count}
+                          <MessageCircle className="w-3.5 h-3.5" fill="white" /> {media.comments_count ?? 0}
                         </span>
                       </div>
                     </div>

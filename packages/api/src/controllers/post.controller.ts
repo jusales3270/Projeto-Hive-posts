@@ -1,8 +1,7 @@
 import { Response } from 'express';
 import { prisma } from '../config/database';
 import { AuthRequest } from '../middleware/auth.middleware';
-import { publishToInstagram } from '../services/instagram.service';
-import { schedulePost, cancelScheduledPost } from '../services/scheduler.service';
+import { schedulePost, cancelScheduledPost, publishQueue } from '../services/scheduler.service';
 
 function paramId(req: AuthRequest): string {
   return req.params.id as string;
@@ -120,16 +119,10 @@ export async function publishPost(req: AuthRequest, res: Response) {
   try {
     const id = paramId(req);
     await prisma.post.update({ where: { id }, data: { status: 'PUBLISHING' } });
-    const result = await publishToInstagram(id);
-    await prisma.post.update({
-      where: { id },
-      data: { status: 'PUBLISHED', publishedAt: new Date(), instagramId: result.id },
-    });
-    res.json({ success: true, data: { instagramId: result.id } });
+    await publishQueue.add('publish', { postId: id }, { jobId: `publish-${id}-${Date.now()}` });
+    res.json({ success: true, data: { status: 'PUBLISHING', message: 'Publicacao iniciada em background' } });
   } catch (err: any) {
     console.error('[Publish Error]', err?.message || err);
-    const id = paramId(req);
-    await prisma.post.update({ where: { id }, data: { status: 'FAILED' } });
     res.status(500).json({ success: false, error: err?.message || 'Failed to publish' });
   }
 }
