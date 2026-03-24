@@ -19,7 +19,7 @@ export async function register(req: Request, res: Response) {
     const hashed = await bcrypt.hash(password, 10);
     const user = await prisma.user.create({
       data: { email, password: hashed, name },
-      select: { id: true, email: true, name: true, role: true },
+      select: { id: true, email: true, name: true, role: true, allowedPages: true },
     });
 
     const token = jwt.sign({ userId: user.id }, env.JWT_SECRET, jwtOptions);
@@ -44,7 +44,7 @@ export async function login(req: Request, res: Response) {
 
     res.json({
       success: true,
-      data: { user: { id: user.id, email: user.email, name: user.name, role: user.role }, token },
+      data: { user: { id: user.id, email: user.email, name: user.name, role: user.role, allowedPages: user.allowedPages }, token },
     });
   } catch (err) {
     res.status(500).json({ success: false, error: 'Internal server error' });

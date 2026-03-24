@@ -12,7 +12,7 @@ const jwtOptions: SignOptions = { expiresIn: env.JWT_EXPIRES_IN as any };
 export async function createInvitation(req: AuthRequest, res: Response) {
   try {
     const ownerId = await resolveOwnerId(req.userId!);
-    const { email, role } = req.body;
+    const { email, role, allowedPages } = req.body;
 
     // Check if email already registered
     const existing = await prisma.user.findUnique({ where: { email } });
@@ -34,6 +34,7 @@ export async function createInvitation(req: AuthRequest, res: Response) {
       data: {
         email,
         role: role || 'EDITOR',
+        allowedPages: allowedPages || ['dashboard', 'posts', 'calendar', 'tasks', 'projects', 'funnels'],
         ownerId,
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
       },
@@ -81,8 +82,9 @@ export async function acceptInvitation(req: AuthRequest | any, res: Response) {
           name,
           role: invitation.role,
           ownerId: invitation.ownerId,
+          allowedPages: invitation.allowedPages,
         },
-        select: { id: true, email: true, name: true, role: true },
+        select: { id: true, email: true, name: true, role: true, allowedPages: true },
       }),
       prisma.invitation.update({
         where: { id: invitation.id },
@@ -106,11 +108,11 @@ export async function listMembers(req: AuthRequest, res: Response) {
     const [owner, members] = await Promise.all([
       prisma.user.findUnique({
         where: { id: ownerId },
-        select: { id: true, email: true, name: true, role: true, createdAt: true },
+        select: { id: true, email: true, name: true, role: true, allowedPages: true, createdAt: true },
       }),
       prisma.user.findMany({
         where: { ownerId },
-        select: { id: true, email: true, name: true, role: true, createdAt: true },
+        select: { id: true, email: true, name: true, role: true, allowedPages: true, createdAt: true },
         orderBy: { createdAt: 'asc' },
       }),
     ]);
@@ -158,12 +160,42 @@ export async function updateMemberRole(req: AuthRequest, res: Response) {
     const updated = await prisma.user.update({
       where: { id: memberId },
       data: { role },
-      select: { id: true, email: true, name: true, role: true },
+      select: { id: true, email: true, name: true, role: true, allowedPages: true },
     });
 
     res.json({ success: true, data: updated });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err?.message || 'Failed to update member role' });
+  }
+}
+
+/** Update a member's allowed pages (OWNER only) */
+export async function updateMemberPages(req: AuthRequest, res: Response) {
+  try {
+    const ownerId = await resolveOwnerId(req.userId!);
+    const memberId = req.params.id as string;
+    const { allowedPages } = req.body;
+
+    if (memberId === ownerId) {
+      res.status(400).json({ success: false, error: 'O proprietario tem acesso a todas as paginas' });
+      return;
+    }
+
+    const member = await prisma.user.findFirst({ where: { id: memberId, ownerId } });
+    if (!member) {
+      res.status(404).json({ success: false, error: 'Membro nao encontrado' });
+      return;
+    }
+
+    const updated = await prisma.user.update({
+      where: { id: memberId },
+      data: { allowedPages },
+      select: { id: true, email: true, name: true, role: true, allowedPages: true },
+    });
+
+    res.json({ success: true, data: updated });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err?.message || 'Failed to update member pages' });
   }
 }
 

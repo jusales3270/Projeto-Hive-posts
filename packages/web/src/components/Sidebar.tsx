@@ -6,20 +6,38 @@ import { Home, PlusSquare, FileText, Calendar, CheckSquare, FolderKanban, Settin
 import { useAuth } from './AuthProvider';
 
 const links = [
-  { href: '/', label: 'Dashboard', icon: Home },
-  { href: '/posts/new', label: 'Novo Post', icon: PlusSquare },
-  { href: '/posts', label: 'Posts', icon: FileText },
-  { href: '/calendar', label: 'Calendario', icon: Calendar },
-  { href: '/tasks', label: 'Tarefas', icon: CheckSquare },
-  { href: '/projects', label: 'Projetos', icon: FolderKanban },
-  { href: '/funnels', label: 'Funis', icon: GitBranch },
-  { href: '/team', label: 'Equipe', icon: Users },
-  { href: '/settings', label: 'Configuracoes', icon: Settings },
+  { href: '/', label: 'Dashboard', icon: Home, page: 'dashboard' },
+  { href: '/posts/new', label: 'Novo Post', icon: PlusSquare, page: 'posts' },
+  { href: '/posts', label: 'Posts', icon: FileText, page: 'posts' },
+  { href: '/calendar', label: 'Calendario', icon: Calendar, page: 'calendar' },
+  { href: '/tasks', label: 'Tarefas', icon: CheckSquare, page: 'tasks' },
+  { href: '/projects', label: 'Projetos', icon: FolderKanban, page: 'projects' },
+  { href: '/funnels', label: 'Funis', icon: GitBranch, page: 'funnels' },
+  { href: '/team', label: 'Equipe', icon: Users, page: 'team' },
+  { href: '/settings', label: 'Configuracoes', icon: Settings, page: 'settings' },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
+
+  const isOwner = user?.role === 'OWNER' || !user?.role;
+  const allowedPages: string[] = user?.allowedPages || [];
+
+  const visibleLinks = links.filter((link) => {
+    // Owner sees everything
+    if (isOwner) return true;
+    // Settings is always visible
+    if (link.page === 'settings') return true;
+    // Team is only for OWNER/ADMIN
+    if (link.page === 'team') return user?.role === 'ADMIN';
+    // Filter by allowedPages
+    if (allowedPages.length === 0) return true;
+    return allowedPages.includes(link.page);
+  });
+
+  const navLinks = visibleLinks.filter((l) => l.page !== 'settings');
+  const settingsLink = visibleLinks.find((l) => l.page === 'settings');
 
   return (
     <aside className="fixed left-0 top-0 h-full w-60 bg-white border-r border-border flex flex-col z-20">
@@ -40,7 +58,7 @@ export function Sidebar() {
       <nav className="flex-1 px-3 py-2 flex flex-col gap-1">
         <span className="text-[11px] font-bold text-text-muted px-4 mb-2 mt-2 tracking-wider uppercase">Menu</span>
 
-        {links.slice(0, -1).map((link) => {
+        {navLinks.map((link) => {
           const active = pathname === link.href;
           const Icon = link.icon;
           return (
@@ -63,20 +81,22 @@ export function Sidebar() {
         })}
 
         {/* Settings pushed to bottom */}
-        <Link
-          href="/settings"
-          className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-[14px] font-medium transition-all duration-200 relative mt-auto mb-4 ${
-            pathname === '/settings'
-              ? 'text-primary bg-primary/[0.08]'
-              : 'text-text-secondary hover:bg-bg-card-hover hover:text-text-primary'
-          }`}
-        >
-          {pathname === '/settings' && (
-            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-3/4 rounded-r-full bg-gradient-to-b from-primary to-accent-pink" />
-          )}
-          <Settings className="w-5 h-5" strokeWidth={pathname === '/settings' ? 2 : 1.5} />
-          Configuracoes
-        </Link>
+        {settingsLink && (
+          <Link
+            href="/settings"
+            className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-[14px] font-medium transition-all duration-200 relative mt-auto mb-4 ${
+              pathname === '/settings'
+                ? 'text-primary bg-primary/[0.08]'
+                : 'text-text-secondary hover:bg-bg-card-hover hover:text-text-primary'
+            }`}
+          >
+            {pathname === '/settings' && (
+              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-3/4 rounded-r-full bg-gradient-to-b from-primary to-accent-pink" />
+            )}
+            <Settings className="w-5 h-5" strokeWidth={pathname === '/settings' ? 2 : 1.5} />
+            Configuracoes
+          </Link>
+        )}
       </nav>
 
       {/* Logout */}

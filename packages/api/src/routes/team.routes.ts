@@ -9,6 +9,7 @@ import {
   listMembers,
   listInvitations,
   updateMemberRole,
+  updateMemberPages,
   removeMember,
   deleteInvitation,
   getInvitationByToken,
@@ -16,9 +17,16 @@ import {
 
 const router = Router();
 
+const allowedPagesEnum = z.enum(['dashboard', 'posts', 'calendar', 'tasks', 'projects', 'funnels', 'team', 'settings']);
+
 const inviteSchema = z.object({
   email: z.string().email(),
   role: z.enum(['ADMIN', 'EDITOR', 'VIEWER']).optional(),
+  allowedPages: z.array(allowedPagesEnum).optional(),
+});
+
+const updatePagesSchema = z.object({
+  allowedPages: z.array(allowedPagesEnum),
 });
 
 const acceptSchema = z.object({
@@ -41,6 +49,7 @@ router.get('/members', listMembers);
 router.get('/invitations', listInvitations);
 router.post('/invite', requireRole('ADMIN'), validate(inviteSchema), createInvitation);
 router.put('/members/:id/role', requireRole('OWNER'), validate(updateRoleSchema), updateMemberRole);
+router.put('/members/:id/pages', requireRole('OWNER'), validate(updatePagesSchema), updateMemberPages);
 router.delete('/members/:id', requireRole('OWNER'), removeMember);
 router.delete('/invitations/:id', requireRole('ADMIN'), deleteInvitation);
 

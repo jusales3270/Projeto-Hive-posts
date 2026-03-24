@@ -177,11 +177,13 @@ export const api = {
   // Team
   listMembers: () => request<any[]>('/api/team/members'),
   listInvitations: () => request<any[]>('/api/team/invitations'),
-  createInvitation: (email: string, role?: string) =>
-    request('/api/team/invite', { method: 'POST', body: JSON.stringify({ email, role }) }),
+  createInvitation: (email: string, role?: string, allowedPages?: string[]) =>
+    request('/api/team/invite', { method: 'POST', body: JSON.stringify({ email, role, allowedPages }) }),
   deleteInvitation: (id: string) => request(`/api/team/invitations/${id}`, { method: 'DELETE' }),
   updateMemberRole: (id: string, role: string) =>
     request(`/api/team/members/${id}/role`, { method: 'PUT', body: JSON.stringify({ role }) }),
+  updateMemberPages: (id: string, allowedPages: string[]) =>
+    request(`/api/team/members/${id}/pages`, { method: 'PUT', body: JSON.stringify({ allowedPages }) }),
   removeMember: (id: string) => request(`/api/team/members/${id}`, { method: 'DELETE' }),
   getInvitationByToken: (token: string) => request<any>(`/api/team/invite/${token}`),
   acceptInvitation: (token: string, name: string, password: string) =>
