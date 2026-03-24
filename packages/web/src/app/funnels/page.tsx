@@ -60,7 +60,11 @@ export default function FunnelsPage() {
           {funnels.map((funnel) => {
             const totalSteps = funnel.stages?.reduce((sum: number, s: any) => sum + (s._count?.steps || 0), 0) || 0;
             return (
-              <div key={funnel.id} className="card p-5 hover:border-primary/30 transition-colors group">
+              <Link
+                key={funnel.id}
+                href={`/funnels/${funnel.id}`}
+                className="card p-5 hover:border-primary/30 transition-colors group cursor-pointer block"
+              >
                 <div className="flex items-start justify-between mb-3">
                   <div>
                     <h3 className="font-semibold text-text-primary">{funnel.title}</h3>
@@ -69,7 +73,7 @@ export default function FunnelsPage() {
                     )}
                   </div>
                   <button
-                    onClick={() => handleDelete(funnel.id, funnel.title)}
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDelete(funnel.id, funnel.title); }}
                     className="p-1.5 rounded-lg text-text-muted hover:text-status-failed hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -101,14 +105,11 @@ export default function FunnelsPage() {
                     <span>{funnel.stages?.length || 0} etapas</span>
                     <span>{totalSteps} passos</span>
                   </div>
-                  <Link
-                    href={`/funnels/${funnel.id}`}
-                    className="text-xs font-semibold text-primary hover:text-primary-dark transition-colors"
-                  >
+                  <span className="text-xs font-semibold text-primary">
                     Abrir Builder
-                  </Link>
+                  </span>
                 </div>
-              </div>
+              </Link>
             );
           })}
         </div>
