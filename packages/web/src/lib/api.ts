@@ -212,4 +212,8 @@ export const api = {
     request(`/api/funnels/${funnelId}/stages/${stageId}/steps/${stepId}`, { method: 'PUT', body: JSON.stringify(body) }),
   deleteStep: (funnelId: string, stageId: string, stepId: string) =>
     request(`/api/funnels/${funnelId}/stages/${stageId}/steps/${stepId}`, { method: 'DELETE' }),
+  reorderStages: (funnelId: string, stageIds: string[]) =>
+    request(`/api/funnels/${funnelId}/stages/reorder`, { method: 'PUT', body: JSON.stringify({ stageIds }) }),
+  moveStep: (funnelId: string, stageId: string, stepId: string, body: { targetStageId: string; order: number }) =>
+    request(`/api/funnels/${funnelId}/stages/${stageId}/steps/${stepId}/move`, { method: 'PUT', body: JSON.stringify(body) }),
 };

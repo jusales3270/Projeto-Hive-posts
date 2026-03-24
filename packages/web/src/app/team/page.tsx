@@ -140,9 +140,21 @@ export default function TeamPage() {
     }
   }
 
-  function copyInviteLink(token: string) {
+  async function copyInviteLink(token: string) {
     const link = `${window.location.origin}/invite?token=${token}`;
-    navigator.clipboard.writeText(link);
+    try {
+      await navigator.clipboard.writeText(link);
+    } catch {
+      // Fallback for HTTP/insecure contexts
+      const textarea = document.createElement('textarea');
+      textarea.value = link;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+    }
     setCopiedToken(token);
     setTimeout(() => setCopiedToken(null), 2000);
   }
