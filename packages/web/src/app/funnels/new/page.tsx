@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '../../../lib/api';
-import { GitBranch, Loader2, FileText, ShoppingCart, Video, Users, Rocket, Zap } from 'lucide-react';
+import { GitBranch, Loader2, FileText, ShoppingCart, Video, Users, Rocket, Zap, ChevronDown, ArrowRight, Check } from 'lucide-react';
 
 const TEMPLATES = [
   {
@@ -206,49 +206,81 @@ export default function NewFunnelPage() {
                 const Icon = template.icon;
                 const selected = selectedTemplate === template.id;
                 return (
-                  <button
-                    key={template.id}
-                    type="button"
-                    onClick={() => setSelectedTemplate(template.id)}
-                    className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
-                      selected
-                        ? 'border-primary bg-primary/5 shadow-sm'
-                        : 'border-border bg-white hover:border-primary/30'
-                    }`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div
-                        className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-                        style={{ backgroundColor: template.color + '20', color: template.color }}
-                      >
-                        <Icon className="w-5 h-5" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-semibold text-text-primary text-sm">{template.title}</h3>
-                          {selected && (
-                            <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
-                              SELECIONADO
-                            </span>
+                  <div key={template.id}>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedTemplate(selected ? 'blank' : template.id)}
+                      className={`w-full text-left p-4 transition-all ${
+                        selected
+                          ? 'border-2 border-primary bg-primary/5 shadow-sm rounded-xl ' + (template.stages.length > 0 ? 'rounded-b-none' : '')
+                          : 'border-2 border-border bg-white hover:border-primary/30 rounded-xl'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                          style={{ backgroundColor: template.color + '20', color: template.color }}
+                        >
+                          <Icon className="w-5 h-5" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-semibold text-text-primary text-sm">{template.title}</h3>
+                            {selected && (
+                              <Check className="w-4 h-4 text-primary" />
+                            )}
+                          </div>
+                          <p className="text-xs text-text-secondary mt-0.5">{template.description}</p>
+                          {!selected && template.stages.length > 0 && (
+                            <div className="flex items-center gap-1 mt-2 flex-wrap">
+                              {template.stages.map((stage, idx) => (
+                                <span
+                                  key={idx}
+                                  className="text-[10px] font-semibold px-2 py-0.5 rounded-full text-white"
+                                  style={{ backgroundColor: stage.color }}
+                                >
+                                  {stage.title}
+                                </span>
+                              ))}
+                            </div>
                           )}
                         </div>
-                        <p className="text-xs text-text-secondary mt-0.5">{template.description}</p>
                         {template.stages.length > 0 && (
-                          <div className="flex items-center gap-1 mt-2 flex-wrap">
-                            {template.stages.map((stage, idx) => (
-                              <span
-                                key={idx}
-                                className="text-[10px] font-semibold px-2 py-0.5 rounded-full text-white"
-                                style={{ backgroundColor: stage.color }}
-                              >
-                                {stage.title}
-                              </span>
-                            ))}
-                          </div>
+                          <ChevronDown className={`w-4 h-4 text-text-muted transition-transform ${selected ? 'rotate-180' : ''}`} />
                         )}
                       </div>
-                    </div>
-                  </button>
+                    </button>
+
+                    {/* Expanded: show stages and steps */}
+                    {selected && template.stages.length > 0 && (
+                      <div className="border-2 border-t-0 border-primary bg-white rounded-b-xl p-4 space-y-3">
+                        {template.stages.map((stage, stageIdx) => (
+                          <div key={stageIdx}>
+                            <div className="flex items-center gap-2 mb-1.5">
+                              <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: stage.color }} />
+                              <span className="text-xs font-bold text-text-primary uppercase tracking-wider">{stage.title}</span>
+                              {stageIdx < template.stages.length - 1 && (
+                                <ArrowRight className="w-3 h-3 text-text-muted ml-auto" />
+                              )}
+                            </div>
+                            <div className="ml-5 space-y-1">
+                              {stage.steps.map((step: any, stepIdx: number) => (
+                                <div key={stepIdx} className="flex items-center gap-2 py-1 px-2 rounded-md bg-bg-main">
+                                  <div className="w-1.5 h-1.5 rounded-full bg-text-muted flex-shrink-0" />
+                                  <span className="text-xs text-text-secondary">{step.title}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                        <div className="pt-2 border-t border-border">
+                          <p className="text-[11px] text-text-muted text-center">
+                            {template.stages.length} etapas &middot; {template.stages.reduce((sum, s) => sum + s.steps.length, 0)} passos
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 );
               })}
             </div>
