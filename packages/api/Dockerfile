@@ -1,4 +1,4 @@
-FROM node:22-slim AS builder
+FROM node:22-alpine AS builder
 WORKDIR /app
 COPY package.json package-lock.json turbo.json ./
 COPY packages/api/package.json ./packages/api/
@@ -10,7 +10,7 @@ RUN npm ci
 COPY packages/shared ./packages/shared
 COPY packages/api ./packages/api
 RUN cd packages/api && npx prisma generate
-RUN npx turbo build --filter=@instapost/api
+RUN npm run build --workspace=packages/shared && npm run build --workspace=packages/api
 
 FROM node:22-slim
 WORKDIR /app
