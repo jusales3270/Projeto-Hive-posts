@@ -34,7 +34,7 @@ export default function PostsList() {
 
   async function loadPosts() {
     try {
-      const params: Record<string, string> = { page: String(page), limit: '20' };
+      const params: Record<string, string> = { page: String(page), limit: '10' };
       if (filter) params.status = filter;
       const result = await api.listPosts(params);
       setPosts(result.items);
@@ -243,18 +243,45 @@ export default function PostsList() {
       </div>
 
       {/* Pagination */}
-      {total > 20 && (
-        <div className="flex items-center justify-between mt-4 px-1">
-          <p className="text-xs text-text-secondary">
-            Mostrando {(page - 1) * 20 + 1}-{Math.min(page * 20, total)} de {total}
-          </p>
-          <div className="flex gap-2">
-            <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="btn-ghost text-xs disabled:opacity-30">Anterior</button>
-            <span className="px-3 py-1.5 text-xs text-text-secondary">Pagina {page}</span>
-            <button onClick={() => setPage((p) => p + 1)} disabled={posts.length < 20} className="btn-ghost text-xs disabled:opacity-30">Proxima</button>
+      {total > 10 && (() => {
+        const totalPages = Math.ceil(total / 10);
+        return (
+          <div className="flex items-center justify-between mt-4 px-1">
+            <p className="text-xs text-text-secondary">
+              Mostrando {(page - 1) * 10 + 1}-{Math.min(page * 10, total)} de {total}
+            </p>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="p-2 rounded-lg text-text-muted hover:text-text-primary hover:bg-bg-card-hover disabled:opacity-30 transition-colors"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setPage(p)}
+                  className={`w-8 h-8 rounded-lg text-xs font-semibold transition-colors ${
+                    p === page
+                      ? 'bg-primary text-white'
+                      : 'text-text-secondary hover:bg-bg-card-hover'
+                  }`}
+                >
+                  {p}
+                </button>
+              ))}
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="p-2 rounded-lg text-text-muted hover:text-text-primary hover:bg-bg-card-hover disabled:opacity-30 transition-colors"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Schedule Modal */}
       {scheduleModal && (
