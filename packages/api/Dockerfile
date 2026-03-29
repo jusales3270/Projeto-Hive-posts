@@ -1,6 +1,6 @@
 FROM node:22-alpine AS builder
 WORKDIR /app
-COPY package.json package-lock.json turbo.json ./
+COPY package.json package-lock.json turbo.json tsconfig.base.json ./
 COPY packages/api/package.json ./packages/api/
 COPY packages/bot/package.json ./packages/bot/
 COPY packages/mcp/package.json ./packages/mcp/
@@ -10,7 +10,7 @@ RUN npm ci
 COPY packages/shared ./packages/shared
 COPY packages/api ./packages/api
 RUN cd packages/api && npx prisma generate
-RUN npm run build --workspace=packages/shared && npm run build --workspace=packages/api
+RUN cd packages/shared && npx tsc && cd /app/packages/api && npx tsc
 
 FROM node:22-slim
 WORKDIR /app
