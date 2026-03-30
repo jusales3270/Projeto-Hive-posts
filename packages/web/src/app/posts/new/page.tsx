@@ -36,6 +36,38 @@ export default function NewPost() {
   const [postFile, setPostFile] = useState({ url: '', name: '' });
   const [fileUploading, setFileUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [genMode, setGenMode] = useState<'ai' | 'template'>('ai');
+  const [selectedTemplate, setSelectedTemplate] = useState('bold-gradient');
+  const [templateSubtitle, setTemplateSubtitle] = useState('');
+
+  const TEMPLATES = [
+    { id: 'bold-gradient', name: 'Gradiente Bold', emoji: '🟣' },
+    { id: 'minimal-dark', name: 'Minimal Dark', emoji: '⚫' },
+    { id: 'neon-card', name: 'Neon Card', emoji: '💜' },
+    { id: 'quote-elegant', name: 'Citacao', emoji: '✨' },
+    { id: 'stats-impact', name: 'Impacto', emoji: '📊' },
+    { id: 'split-color', name: 'Split', emoji: '🎨' },
+  ];
+
+  async function handleGenerateTemplate() {
+    if (!prompt) return;
+    setGenLoading(true);
+    setMessage('');
+    try {
+      const result = await api.generateTemplate({
+        title: prompt,
+        subtitle: templateSubtitle || undefined,
+        template: selectedTemplate,
+        aspectRatio,
+      });
+      setImages((prev) => [...prev, { url: result.imageUrl, prompt }]);
+      setActiveImageIndex(images.length);
+    } catch (err: any) {
+      setMessage(err.message || 'Erro ao gerar template');
+      setMessageType('error');
+    }
+    setGenLoading(false);
+  }
 
   async function handleFileUpload(file: File) {
     setFileUploading(true);
@@ -171,62 +203,127 @@ export default function NewPost() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Editor */}
         <div className="space-y-5">
-          {/* AI Generation */}
+          {/* Generation Mode Toggle + Content */}
           <div className="card p-5">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gradient-to-br from-primary/10 to-accent-pink/10">
-                <Zap className="w-4 h-4 text-primary" strokeWidth={2} />
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-gradient-to-br from-primary/10 to-accent-pink/10">
+                  <Zap className="w-4 h-4 text-primary" strokeWidth={2} />
+                </div>
+                <h2 className="text-sm font-bold text-text-primary">Gerar Imagem</h2>
               </div>
-              <h2 className="text-sm font-bold text-text-primary">Geracao com IA</h2>
+              <div className="flex items-center bg-bg-main rounded-lg p-0.5">
+                <button
+                  onClick={() => setGenMode('ai')}
+                  className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${genMode === 'ai' ? 'bg-white text-primary shadow-sm' : 'text-text-muted hover:text-text-primary'}`}
+                >
+                  IA (Gemini)
+                </button>
+                <button
+                  onClick={() => setGenMode('template')}
+                  className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${genMode === 'template' ? 'bg-white text-primary shadow-sm' : 'text-text-muted hover:text-text-primary'}`}
+                >
+                  Template
+                </button>
+              </div>
             </div>
             <div className="space-y-3">
+              {/* Shared: Prompt/Title field */}
               <div>
-                <label className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wider">Prompt</label>
+                <label className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wider">
+                  {genMode === 'ai' ? 'Prompt' : 'Texto Principal'}
+                </label>
                 <textarea
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
-                  placeholder="Descreva o tema do post... Ex: 'Post sobre produtividade com dicas de organizacao'"
-                  rows={3}
+                  placeholder={genMode === 'ai' ? "Descreva o tema do post... Ex: 'Post sobre produtividade com dicas de organizacao'" : "Texto que aparece no post... Ex: '5 dicas de produtividade'"}
+                  rows={genMode === 'template' ? 2 : 3}
                   className="input-field resize-none"
                 />
               </div>
-              {/* Quantity selector */}
-              <div>
-                <label className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wider">Quantidade de imagens</label>
-                <div className="flex gap-1.5">
-                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
-                    <button
-                      key={n}
-                      onClick={() => setImageCount(n)}
-                      disabled={n + images.length > 10}
-                      className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${
-                        imageCount === n
-                          ? 'bg-primary text-white shadow-sm'
-                          : n + images.length > 10
-                          ? 'bg-bg-main text-text-muted/30 cursor-not-allowed'
-                          : 'bg-bg-main text-text-secondary hover:border-primary/50 hover:text-primary'
-                      }`}
-                    >
-                      {n}
+              {/* Template mode: subtitle + template selector */}
+              {genMode === 'template' && (
+                <>
+                  <div>
+                    <label className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wider">Subtitulo (opcional)</label>
+                    <input
+                      value={templateSubtitle}
+                      onChange={(e) => setTemplateSubtitle(e.target.value)}
+                      placeholder="Texto complementar..."
+                      className="input-field"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wider">Template</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {TEMPLATES.map((t) => (
+                        <button
+                          key={t.id}
+                          onClick={() => setSelectedTemplate(t.id)}
+                          className={`p-2.5 rounded-lg text-center transition-all border ${
+                            selectedTemplate === t.id
+                              ? 'border-primary bg-primary/5 text-primary'
+                              : 'border-border bg-white text-text-secondary hover:border-primary/30'
+                          }`}
+                        >
+                          <div className="text-lg mb-0.5">{t.emoji}</div>
+                          <div className="text-[10px] font-semibold">{t.name}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleGenerateTemplate}
+                    disabled={genLoading || !prompt}
+                    className="btn-cta w-full justify-center text-xs py-2.5"
+                  >
+                    {genLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" strokeWidth={1.5} />}
+                    {genLoading ? 'Gerando...' : 'Gerar com Template'}
+                  </button>
+                </>
+              )}
+
+              {/* AI mode: Quantity + buttons */}
+              {genMode === 'ai' && (
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wider">Quantidade de imagens</label>
+                    <div className="flex gap-1.5">
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
+                        <button
+                          key={n}
+                          onClick={() => setImageCount(n)}
+                          disabled={n + images.length > 10}
+                          className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${
+                            imageCount === n
+                              ? 'bg-primary text-white shadow-sm'
+                              : n + images.length > 10
+                              ? 'bg-bg-main text-text-muted/30 cursor-not-allowed'
+                              : 'bg-bg-main text-text-secondary hover:border-primary/50 hover:text-primary'
+                          }`}
+                        >
+                          {n}
+                        </button>
+                      ))}
+                    </div>
+                    {imageCount >= 2 && (
+                      <p className="text-[10px] text-primary mt-1.5 font-medium flex items-center gap-1">
+                        <Layers className="w-3 h-3" /> Vai gerar {imageCount} imagens (carrossel)
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={handleGenerateImage} disabled={genLoading || !prompt} className="btn-cta flex-1 justify-center text-xs py-2.5">
+                      {genLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : imageCount >= 2 ? <Layers className="w-4 h-4" strokeWidth={1.5} /> : <Plus className="w-4 h-4" strokeWidth={1.5} />}
+                      {genLoading ? (genProgress || 'Gerando...') : imageCount >= 2 ? `Gerar Carrossel (${imageCount})` : images.length > 0 ? 'Adicionar Imagem' : 'Gerar Imagem'}
                     </button>
-                  ))}
+                    <button onClick={handleGenerateCaption} disabled={genLoading || !prompt} className="btn-ghost flex-1 justify-center text-xs py-2.5">
+                      <Edit3 className="w-4 h-4" strokeWidth={1.5} />
+                      Gerar Legenda
+                    </button>
+                  </div>
                 </div>
-                {imageCount >= 2 && (
-                  <p className="text-[10px] text-primary mt-1.5 font-medium flex items-center gap-1">
-                    <Layers className="w-3 h-3" /> Vai gerar {imageCount} imagens (carrossel)
-                  </p>
-                )}
-              </div>
-              <div className="flex gap-2">
-                <button onClick={handleGenerateImage} disabled={genLoading || !prompt} className="btn-cta flex-1 justify-center text-xs py-2.5">
-                  {genLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : imageCount >= 2 ? <Layers className="w-4 h-4" strokeWidth={1.5} /> : <Plus className="w-4 h-4" strokeWidth={1.5} />}
-                  {genLoading ? (genProgress || 'Gerando...') : imageCount >= 2 ? `Gerar Carrossel (${imageCount})` : images.length > 0 ? 'Adicionar Imagem' : 'Gerar Imagem'}
-                </button>
-                <button onClick={handleGenerateCaption} disabled={genLoading || !prompt} className="btn-ghost flex-1 justify-center text-xs py-2.5">
-                  <Edit3 className="w-4 h-4" strokeWidth={1.5} />
-                  Gerar Legenda
-                </button>
-              </div>
+              )}
               {images.length > 0 && (
                 <div className="text-center">
                   <span className="text-xs text-text-muted">
