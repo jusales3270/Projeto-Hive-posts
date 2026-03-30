@@ -149,7 +149,7 @@ export const api = {
     return data.data as { fileUrl: string; fileName: string; mimeType: string };
   },
 
-  instagramProfile: () =>
+  instagramProfile: (accountId?: string) =>
     request<{
       profile: {
         id: string;
@@ -172,7 +172,7 @@ export const api = {
         like_count: number;
         comments_count: number;
       }>;
-    }>('/api/instagram/profile'),
+    }>(`/api/instagram/profile${accountId ? `?accountId=${accountId}` : ''}`),
 
   // Team
   listMembers: () => request<any[]>('/api/team/members'),

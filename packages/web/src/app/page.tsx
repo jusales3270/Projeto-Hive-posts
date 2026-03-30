@@ -71,6 +71,17 @@ export default function Dashboard() {
   const [igAccounts, setIgAccounts] = useState<any[]>([]);
   const [selectedAccount, setSelectedAccount] = useState<string>('');
 
+  async function loadIgProfile(accountId?: string) {
+    try {
+      const ig = await api.instagramProfile(accountId);
+      setIgProfile(ig.profile);
+      setIgMedia(ig.recentMedia);
+    } catch {
+      setIgProfile(null);
+      setIgMedia([]);
+    }
+  }
+
   useEffect(() => {
     async function load() {
       try {
@@ -98,15 +109,15 @@ export default function Dashboard() {
         const accounts = Array.isArray(res) ? res : res?.data || [];
         setIgAccounts(accounts);
         const defaultAcc = accounts.find((a: any) => a.isDefault) || accounts[0];
-        if (defaultAcc) setSelectedAccount(defaultAcc.id);
-      } catch {}
-
-      // Load Instagram data
-      try {
-        const ig = await api.instagramProfile();
-        setIgProfile(ig.profile);
-        setIgMedia(ig.recentMedia);
-      } catch { /* Instagram not configured */ }
+        if (defaultAcc) {
+          setSelectedAccount(defaultAcc.id);
+          await loadIgProfile(defaultAcc.id);
+        } else {
+          await loadIgProfile();
+        }
+      } catch {
+        await loadIgProfile();
+      }
     }
     load();
   }, []);
@@ -254,7 +265,7 @@ export default function Dashboard() {
                 {igAccounts.map((acc: any) => (
                   <button
                     key={acc.id}
-                    onClick={() => setSelectedAccount(acc.id)}
+                    onClick={() => { setSelectedAccount(acc.id); loadIgProfile(acc.id); }}
                     className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
                       selectedAccount === acc.id
                         ? 'bg-primary text-white shadow-sm'

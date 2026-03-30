@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import { env } from './config/env';
+import { prisma } from './config/database';
 import { initMinio } from './config/minio';
 import { apiLimiter } from './middleware/rateLimiter';
 import authRoutes from './routes/auth.routes';
@@ -89,8 +90,22 @@ app.get('/api/instagram/status', (_req, res) => {
 
 // Instagram profile + recent media (tries Business API first, then Instagram API)
 app.get('/api/instagram/profile', async (_req, res) => {
-  const token = env.INSTAGRAM_ACCESS_TOKEN;
-  const igUserId = env.INSTAGRAM_USER_ID;
+  const accountId = _req.query.accountId as string | undefined;
+
+  let token = env.INSTAGRAM_ACCESS_TOKEN;
+  let igUserId = env.INSTAGRAM_USER_ID;
+
+  // If accountId provided, look up from database
+  if (accountId && accountId !== 'env') {
+    try {
+      const account = await prisma.instagramToken.findUnique({ where: { id: accountId } });
+      if (account) {
+        token = account.accessToken;
+        igUserId = account.instagramUserId;
+      }
+    } catch {}
+  }
+
   if (!token) {
     res.json({ success: false, error: 'Instagram not configured' });
     return;
