@@ -36,7 +36,9 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY scripts/video/ ./scripts/video/
 COPY scripts/video/package.json /tmp/video-pkg/package.json
 RUN cd /tmp/video-pkg && npm install --omit=dev && cp -r node_modules /app/scripts/video/
-RUN cd /app/scripts/video && npx prisma generate --schema=/app/prisma/schema.prisma
+# Link the API's generated Prisma client into the video worker
+RUN cp -r /app/node_modules/.prisma /app/scripts/video/node_modules/.prisma && \
+    cp -r /app/node_modules/@prisma /app/scripts/video/node_modules/@prisma
 
 # Internal Docker network config
 ENV NODE_ENV=production
