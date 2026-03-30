@@ -316,10 +316,30 @@ O YouTube bloqueia downloads de servidores. Voce precisa exportar cookies do seu
 1. No OpenHive > **Configuracoes** > **Conexao MCP**
 2. Cole a URL do MCP Server (do Coolify/Easypanel/VPS) e salve
 3. Copie a URL
-4. Adicione no Claude:
-   - **Claude Cowork**: Personalizar > Conectores > **+** > Cole a URL
-   - **Claude Desktop**: Settings > MCP Servers > Add Server > Cole a URL
-   - **Claude Code**: Adicione no arquivo de configuracao MCP
+
+**No Claude Cowork (conector MCP):**
+1. Clique em **Personalizar** (canto inferior esquerdo)
+2. Va em **Conectores** > clique no **+** (Adicionar)
+3. Cole a URL do MCP e salve
+4. O OpenHive aparece na lista com 24 tools disponiveis
+
+**No Claude Cowork (plugin com skills):**
+1. Baixe o ZIP do plugin OpenHive (disponivel na aba Releases do repositorio)
+2. Extraia o ZIP numa pasta local
+3. No Claude Code, execute os comandos:
+```bash
+/plugin marketplace add ./caminho/para/openhives-plugin
+/plugin install openhives
+/reload-plugins
+```
+4. As skills do OpenHive ficam disponiveis no Cowork automaticamente
+
+**No Claude Desktop:**
+1. Va em **Settings** > **MCP Servers** > **Add Server**
+2. Cole a URL do MCP e salve
+
+**No Claude Code:**
+1. Adicione no arquivo de configuracao MCP (`claude_desktop_config.json` ou similar)
 
 O Claude tera acesso a 24 tools pra criar posts, gerar imagens, tarefas, projetos e mais.
 
