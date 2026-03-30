@@ -24,8 +24,8 @@ export const api = {
     return request<{ items: any[]; total: number }>(`/api/posts?${qs}`);
   },
 
-  publishPost: (id: string) =>
-    request(`/api/posts/${id}/publish`, { method: 'POST' }),
+  publishPost: (id: string, accountId?: string) =>
+    request(`/api/posts/${id}/publish`, { method: 'POST', body: JSON.stringify({ accountId }) }),
 
   schedulePost: (id: string, scheduledAt: string) =>
     request(`/api/posts/${id}/schedule`, { method: 'POST', body: JSON.stringify({ scheduledAt }) }),

@@ -68,6 +68,8 @@ export default function Dashboard() {
   const [recentPosts, setRecentPosts] = useState<any[]>([]);
   const [igProfile, setIgProfile] = useState<IGProfile | null>(null);
   const [igMedia, setIgMedia] = useState<IGMedia[]>([]);
+  const [igAccounts, setIgAccounts] = useState<any[]>([]);
+  const [selectedAccount, setSelectedAccount] = useState<string>('');
 
   useEffect(() => {
     async function load() {
@@ -89,6 +91,15 @@ export default function Dashboard() {
         setUpcomingPosts(scheduled.items);
         setRecentPosts(published.items);
       } catch { /* API down or not logged in */ }
+
+      // Load Instagram accounts
+      try {
+        const res: any = await api.listInstagramAccounts();
+        const accounts = Array.isArray(res) ? res : res?.data || [];
+        setIgAccounts(accounts);
+        const defaultAcc = accounts.find((a: any) => a.isDefault) || accounts[0];
+        if (defaultAcc) setSelectedAccount(defaultAcc.id);
+      } catch {}
 
       // Load Instagram data
       try {
@@ -233,10 +244,32 @@ export default function Dashboard() {
       </div>
 
       {/* Instagram Profile + Recent Media */}
-      {igProfile && (
+      {(igProfile || igAccounts.length > 0) && (
         <div className="card p-6 mb-6">
+          {/* Account Selector */}
+          {igAccounts.length > 1 && (
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-xs font-semibold text-text-muted">Conta:</span>
+              <div className="flex gap-1.5">
+                {igAccounts.map((acc: any) => (
+                  <button
+                    key={acc.id}
+                    onClick={() => setSelectedAccount(acc.id)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                      selectedAccount === acc.id
+                        ? 'bg-primary text-white shadow-sm'
+                        : 'bg-bg-main text-text-secondary hover:bg-bg-card-hover'
+                    }`}
+                  >
+                    @{acc.username || acc.instagramUserId?.slice(-6)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Profile Row */}
-          <div className="flex items-center gap-4 mb-5">
+          {igProfile && <div className="flex items-center gap-4 mb-5">
             {igProfile.profile_picture_url ? (
               <img src={igProfile.profile_picture_url} alt={igProfile.username} className="w-14 h-14 rounded-full object-cover border-2 border-primary/20" />
             ) : (
@@ -292,7 +325,7 @@ export default function Dashboard() {
                 <span className="text-[11px] text-text-secondary">Eng. Medio</span>
               </div>
             </div>
-          </div>
+          </div>}
 
           {/* Media Grid */}
           {igMedia.length > 0 && (

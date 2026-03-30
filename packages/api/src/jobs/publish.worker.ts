@@ -6,7 +6,7 @@ import { publishToInstagram } from '../services/instagram.service';
 export const publishWorker = new Worker(
   'publish-queue',
   async (job) => {
-    const { postId } = job.data;
+    const { postId, accountId } = job.data;
 
     await prisma.post.update({
       where: { id: postId },
@@ -14,7 +14,7 @@ export const publishWorker = new Worker(
     });
 
     try {
-      const result = await publishToInstagram(postId);
+      const result = await publishToInstagram(postId, accountId);
       await prisma.post.update({
         where: { id: postId },
         data: { status: 'PUBLISHED', publishedAt: new Date(), instagramId: result.id },

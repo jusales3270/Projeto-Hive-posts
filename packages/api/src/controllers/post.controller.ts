@@ -114,8 +114,9 @@ export async function deletePost(req: AuthRequest, res: Response) {
 export async function publishPost(req: AuthRequest, res: Response) {
   try {
     const id = paramId(req);
+    const accountId = (req.body?.accountId || req.query?.accountId || undefined) as string | undefined;
     await prisma.post.update({ where: { id }, data: { status: 'PUBLISHING' } });
-    await publishQueue.add('publish', { postId: id }, { jobId: `publish-${id}-${Date.now()}` });
+    await publishQueue.add('publish', { postId: id, accountId }, { jobId: `publish-${id}-${Date.now()}` });
     res.json({ success: true, data: { status: 'PUBLISHING', message: 'Publicacao iniciada em background' } });
   } catch (err: any) {
     console.error('[Publish Error]', err?.message || err);

@@ -122,12 +122,13 @@ function registerTools(server: McpServer) {
 
   server.tool(
     'publish_now',
-    'Publica um post imediatamente no Instagram',
+    'Publica um post imediatamente no Instagram. Use account_id para escolher a conta',
     {
       post_id: z.string().describe('ID do post para publicar'),
+      account_id: z.string().optional().describe('ID da conta Instagram (opcional, usa a padrao se nao informado)'),
     },
-    async ({ post_id }) => {
-      const result = await publishNow({ post_id });
+    async ({ post_id, account_id }) => {
+      const result = await publishNow({ post_id, account_id });
       return { content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }] };
     },
   );
