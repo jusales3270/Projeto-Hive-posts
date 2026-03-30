@@ -71,7 +71,9 @@ ENV FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
 ENV MINIO_PUBLIC_URL=${MINIO_PUBLIC_URL:-http://localhost:9000}
 
 EXPOSE 3001
-HEALTHCHECK --interval=30s --timeout=5s CMD wget -qO- http://localhost:3001/api/health || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=5 CMD wget -qO- http://localhost:3001/api/health || exit 1
 
-# Start: video worker in background + API
-CMD ["sh", "-c", "npx prisma migrate deploy && node /app/scripts/video/worker.mjs & node dist/index.js"]
+COPY scripts/video/start-api.sh /app/start-api.sh
+RUN chmod +x /app/start-api.sh
+
+CMD ["/app/start-api.sh"]
