@@ -18,12 +18,14 @@ const ALLOWED_KEYS = [
   'NANO_BANANA_API_KEY',
   'TELEGRAM_BOT_TOKEN',
   'TELEGRAM_ALLOWED_CHAT_IDS',
+  'FACEBOOK_APP_ID',
+  'FACEBOOK_APP_SECRET',
   'MCP_AUTH_TOKEN',
   'MCP_URL',
   'YOUTUBE_COOKIES',
 ];
 
-const NON_SECRET_KEYS = ['MCP_URL', 'TELEGRAM_ALLOWED_CHAT_IDS', 'INSTAGRAM_USER_ID', 'YOUTUBE_COOKIES'];
+const NON_SECRET_KEYS = ['MCP_URL', 'TELEGRAM_ALLOWED_CHAT_IDS', 'INSTAGRAM_USER_ID', 'FACEBOOK_APP_ID', 'YOUTUBE_COOKIES'];
 
 // Check if a key has a value in .env
 function getEnvValue(key: string): string | undefined {
@@ -33,6 +35,8 @@ function getEnvValue(key: string): string | undefined {
     NANO_BANANA_API_KEY: env.NANO_BANANA_API_KEY,
     TELEGRAM_BOT_TOKEN: env.TELEGRAM_BOT_TOKEN,
     TELEGRAM_ALLOWED_CHAT_IDS: env.TELEGRAM_ALLOWED_CHAT_IDS,
+    FACEBOOK_APP_ID: env.FACEBOOK_APP_ID,
+    FACEBOOK_APP_SECRET: env.FACEBOOK_APP_SECRET,
     MCP_AUTH_TOKEN: env.MCP_AUTH_TOKEN,
   };
   return map[key];
@@ -89,13 +93,42 @@ router.put('/', validate(updateSchema), async (req: AuthRequest, res: Response) 
       return;
     }
 
+    let finalValue = value;
+
+    // Auto-exchange Instagram short-lived token for long-lived token
+    if (key === 'INSTAGRAM_ACCESS_TOKEN' && value.startsWith('IGAA')) {
+      try {
+        // Get Facebook App ID and Secret from DB or env
+        const appIdSetting = await prisma.setting.findUnique({ where: { userId_key: { userId, key: 'FACEBOOK_APP_ID' } } });
+        const appSecretSetting = await prisma.setting.findUnique({ where: { userId_key: { userId, key: 'FACEBOOK_APP_SECRET' } } });
+        const appId = appIdSetting?.value || env.FACEBOOK_APP_ID;
+        const appSecret = appSecretSetting?.value || env.FACEBOOK_APP_SECRET;
+
+        if (appId && appSecret) {
+          const exchangeUrl = `https://graph.facebook.com/v21.0/oauth/access_token?grant_type=fb_exchange_token&client_id=${appId}&client_secret=${appSecret}&fb_exchange_token=${value}`;
+          const exchangeRes = await fetch(exchangeUrl);
+          const exchangeData = await exchangeRes.json() as any;
+
+          if (exchangeData.access_token) {
+            finalValue = exchangeData.access_token;
+            console.log(`[Settings] Instagram token exchanged for long-lived token (expires in ${Math.round((exchangeData.expires_in || 0) / 86400)} days)`);
+          } else {
+            console.warn('[Settings] Token exchange failed:', exchangeData.error?.message || 'Unknown error');
+          }
+        }
+      } catch (err: any) {
+        console.warn('[Settings] Token exchange error:', err.message);
+      }
+    }
+
     await prisma.setting.upsert({
       where: { userId_key: { userId, key } },
-      create: { userId, key, value },
-      update: { value },
+      create: { userId, key, value: finalValue },
+      update: { value: finalValue },
     });
 
-    res.json({ success: true, data: { key, saved: true } });
+    const exchanged = finalValue !== value && key === 'INSTAGRAM_ACCESS_TOKEN';
+    res.json({ success: true, data: { key, saved: true, exchanged } });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err?.message });
   }

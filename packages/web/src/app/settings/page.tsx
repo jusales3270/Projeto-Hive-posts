@@ -34,6 +34,8 @@ const SERVICES: ServiceConfig[] = [
     fields: [
       { key: 'INSTAGRAM_ACCESS_TOKEN', label: 'Access Token', placeholder: 'EAAxxxxxxx...' },
       { key: 'INSTAGRAM_USER_ID', label: 'User ID', placeholder: '17841400xxxxx' },
+      { key: 'FACEBOOK_APP_ID', label: 'Facebook App ID', placeholder: '953530xxxxxxx' },
+      { key: 'FACEBOOK_APP_SECRET', label: 'Facebook App Secret', placeholder: 'Chave secreta do app' },
     ],
   },
   {
