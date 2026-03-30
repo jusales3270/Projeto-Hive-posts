@@ -3,6 +3,11 @@ const nextConfig = {
   output: 'standalone',
   eslint: { ignoreDuringBuilds: true },
   typescript: { ignoreBuildErrors: true },
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '500mb',
+    },
+  },
   async rewrites() {
     const defaultUrl = process.env.NODE_ENV === 'production' ? 'http://api:3001' : 'http://localhost:3001';
     const apiUrl = process.env.API_INTERNAL_URL || defaultUrl;

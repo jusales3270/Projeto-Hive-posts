@@ -44,8 +44,9 @@ def download_with_cobalt(url: str, output_path: str) -> bool:
     headers = {
         "Accept": "application/json",
         "Content-Type": "application/json",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
     }
-    body = json.dumps({"url": url, "videoQuality": "1080", "filenameStyle": "basic"}).encode()
+    body = json.dumps({"url": url, "videoQuality": "1080", "youtubeVideoCodec": "h264", "filenameStyle": "basic"}).encode()
 
     try:
         req = urllib.request.Request(cobalt_url, data=body, headers=headers, method="POST")
