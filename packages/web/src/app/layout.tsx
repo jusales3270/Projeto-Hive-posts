@@ -3,7 +3,7 @@ import { LayoutContent } from '../components/LayoutContent';
 import { AuthProvider } from '../components/AuthProvider';
 
 export const metadata = {
-  title: 'OpenHive AI',
+  title: 'OpenHive AI - Content Platform',
   description: 'Plataforma open-source de criacao e gestao de conteudo com IA',
 };
 
