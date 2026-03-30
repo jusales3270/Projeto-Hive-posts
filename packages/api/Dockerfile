@@ -14,24 +14,11 @@ RUN cd packages/shared && npx tsc && cd /app/packages/api && npx tsc
 
 FROM node:20-alpine
 WORKDIR /app
-RUN apk add --no-cache wget python3 py3-pip ffmpeg
-
-# Python dependencies
-COPY scripts/video/requirements.txt /tmp/requirements.txt
-RUN python3 -m venv /opt/venv && /opt/venv/bin/pip install --no-cache-dir -r /tmp/requirements.txt
-ENV PATH="/opt/venv/bin:$PATH"
-
-# Copy built API
+RUN apk add --no-cache wget
 COPY --from=builder /app/packages/api/dist ./dist
 COPY --from=builder /app/packages/api/package.json ./
 COPY --from=builder /app/packages/api/prisma ./prisma
 COPY --from=builder /app/node_modules ./node_modules
-
-# Copy video scripts + dependencies
-COPY scripts/video/ ./scripts/video/
-RUN cd /app/scripts/video && npm install --omit=dev
-RUN cp -r /app/node_modules/.prisma /app/scripts/video/node_modules/.prisma && \
-    cp -r /app/node_modules/@prisma /app/scripts/video/node_modules/@prisma
 
 # Internal Docker network config (matches docker-compose.prod.yml)
 ENV NODE_ENV=production
@@ -47,7 +34,6 @@ ENV MINIO_BUCKET=instapost-images
 ENV NANO_BANANA_PROVIDER=google
 ENV JWT_EXPIRES_IN=7d
 ENV INTERNAL_SERVICE_TOKEN=instapost_service_2026
-ENV SCRIPTS_DIR=/app/scripts/video
 
 # External config from Coolify build args
 ARG INSTAGRAM_ACCESS_TOKEN
@@ -56,13 +42,13 @@ ARG NANO_BANANA_API_KEY
 ARG JWT_SECRET
 ARG FRONTEND_URL
 ARG MINIO_PUBLIC_URL
-ENV INSTAGRAM_ACCESS_TOKEN=${INSTAGRAM_ACCESS_TOKEN}
-ENV INSTAGRAM_USER_ID=${INSTAGRAM_USER_ID}
-ENV NANO_BANANA_API_KEY=${NANO_BANANA_API_KEY}
+ENV INSTAGRAM_ACCESS_TOKEN=${INSTAGRAM_ACCESS_TOKEN:-IGAAYbW9T4MHNBZAGJ6SkdTUk9fU2w2RktoMmRVUkVlbExNVUJHVFRvS3ZABeGcxS2hiazdIR3FtNi1UQVlqWjBTeWlmOXoyVTNScmNaeDg3eG9jOXlNaWhadHp1Tnl2MWhKU3J2T2hxSHptS2ZAnd3dXdDBwT1RXX2FRbjBleWJ2dwZDZD}
+ENV INSTAGRAM_USER_ID=${INSTAGRAM_USER_ID:-26182080638113769}
+ENV NANO_BANANA_API_KEY=${NANO_BANANA_API_KEY:-AIzaSyCcxoV8xT_7O2uPNB6cOqaajKQgH98dziE}
 ENV JWT_SECRET=${JWT_SECRET:-dev_secret_instapost_ai_2026}
-ENV FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
-ENV MINIO_PUBLIC_URL=${MINIO_PUBLIC_URL:-http://localhost:9000}
+ENV FRONTEND_URL=${FRONTEND_URL:-http://72.60.148.203:3000}
+ENV MINIO_PUBLIC_URL=${MINIO_PUBLIC_URL:-http://72.60.148.203:9000}
 
 EXPOSE 3001
-HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=5 CMD wget -qO- http://localhost:3001/api/health || exit 1
-CMD ["sh", "-c", "npx prisma migrate deploy; node /app/scripts/video/worker.mjs & node dist/index.js"]
+HEALTHCHECK --interval=30s --timeout=5s CMD wget -qO- http://localhost:3001/api/health || exit 1
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/index.js"]

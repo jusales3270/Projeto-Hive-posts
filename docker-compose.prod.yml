@@ -102,6 +102,30 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  video-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.video
+    environment:
+      REDIS_URL: redis://:changeme@redis:6379
+      DATABASE_URL: postgresql://instapost:changeme@postgres:5432/instapost
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: '9000'
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_USE_SSL: 'false'
+      MINIO_BUCKET: instapost-images
+      MINIO_PUBLIC_URL: http://72.60.148.203:9000
+      SCRIPTS_DIR: /app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
   pgdata:
   redisdata:
