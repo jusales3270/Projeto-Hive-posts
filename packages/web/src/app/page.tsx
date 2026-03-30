@@ -346,8 +346,13 @@ export default function Dashboard() {
                   {media.media_url ? (
                     <img src={media.media_url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center">
+                    <div className="w-full h-full flex items-center justify-center bg-gray-100">
                       <ImageIcon className="w-6 h-6 text-text-muted" strokeWidth={1} />
+                    </div>
+                  )}
+                  {(media.media_type === 'VIDEO' || media.media_type === 'REEL') && (
+                    <div className="absolute top-1.5 right-1.5 bg-black/60 rounded-full p-1">
+                      <svg className="w-3 h-3 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
                     </div>
                   )}
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
