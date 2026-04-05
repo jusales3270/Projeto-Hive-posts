@@ -271,19 +271,23 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              {/* MCP JSON Config */}
-              {settings['MCP_URL']?.hasValue && (
+              {/* MCP JSON Config - npx (IDEs: Claude Code, Cursor, VS Code, Gemini) */}
+              {settings['MCP_TOKEN']?.hasValue && (
                 <div className="mt-4 p-4 rounded-lg bg-bg-main">
                   <div className="flex items-center justify-between mb-2">
                     <label className="block text-[11px] font-semibold text-text-muted">JSON de Configuracao (cole na IDE)</label>
                     <button
                       onClick={() => {
+                        const mcpUrl = settings['MCP_URL']?.value || '';
+                        const apiUrl = mcpUrl.replace(/\/mcp\/?$/, '').replace(/:\d+\/mcp\/?$/, '').replace(/mcp\./, 'api.');
                         const json = JSON.stringify({
                           mcpServers: {
                             openhive: {
-                              url: settings['MCP_URL']?.value || '',
-                              headers: {
-                                Authorization: 'Bearer ' + (settings['MCP_TOKEN']?.value || 'seu-token-aqui'),
+                              command: 'npx',
+                              args: ['-y', 'openhive-mcp-server@1.1.0'],
+                              env: {
+                                OPENHIVE_API_URL: apiUrl || 'https://api.seu-servidor.com',
+                                OPENHIVE_API_TOKEN: settings['MCP_TOKEN']?.value || 'seu-token-aqui',
                               },
                             },
                           },
@@ -299,16 +303,22 @@ export default function SettingsPage() {
                     </button>
                   </div>
                   <pre className="text-[11px] text-text-secondary font-mono whitespace-pre overflow-x-auto">
-{JSON.stringify({
-  mcpServers: {
-    openhive: {
-      url: settings['MCP_URL']?.value || 'https://seu-servidor/mcp',
-      headers: {
-        Authorization: 'Bearer ' + (settings['MCP_TOKEN']?.value || 'seu-token-aqui'),
+{(() => {
+  const mcpUrl = settings['MCP_URL']?.value || '';
+  const apiUrl = mcpUrl.replace(/\/mcp\/?$/, '').replace(/:\d+\/mcp\/?$/, '').replace(/mcp\./, 'api.');
+  return JSON.stringify({
+    mcpServers: {
+      openhive: {
+        command: 'npx',
+        args: ['-y', 'openhive-mcp-server@1.1.0'],
+        env: {
+          OPENHIVE_API_URL: apiUrl || 'https://api.seu-servidor.com',
+          OPENHIVE_API_TOKEN: settings['MCP_TOKEN']?.value || 'seu-token-aqui',
+        },
       },
     },
-  },
-}, null, 2)}
+  }, null, 2);
+})()}
                   </pre>
                 </div>
               )}
