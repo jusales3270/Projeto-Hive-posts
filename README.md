@@ -503,73 +503,79 @@ Clique **Salvar**.
 
 > **O app ja funciona neste ponto**, so as imagens nao vao carregar ate voce configurar os dominios nos proximos passos.
 
-### Passo 5: Configurar dominios
+### Passo 5: Descobrir o IP da sua VPS
 
-Agora que esta rodando, voce precisa criar dominios para acessar cada servico pelo navegador. **Voce NAO precisa ter um dominio proprio** — o Easypanel gera URLs automaticas.
+Voce precisa do IP da sua VPS para criar os dominios. No Easypanel, o IP aparece no **canto inferior esquerdo** do painel (na barra lateral, embaixo de tudo). E algo como `123.45.67.89`.
+
+Anote esse IP — voce vai usar no proximo passo.
+
+### Passo 6: Configurar dominios
+
+Voce precisa criar 4 dominios para os servicos ficarem acessiveis pelo navegador. **Voce NAO precisa comprar um dominio** — vamos usar o `sslip.io` que e gratuito e resolve automaticamente pro IP da sua VPS.
 
 1. Clique em **Dominios** no menu lateral esquerdo
-2. Voce vai ver a tela de dominios. Pode ja ter um dominio generico criado automaticamente — ignore ele por enquanto.
-3. Voce precisa criar **4 dominios**, um para cada servico. Para cada um, faca:
+2. Clique em **Adicionar Dominio**. Vai abrir um formulario com os campos: Host, Porta, Servico Compose, etc.
+3. Crie os 4 dominios abaixo, um de cada vez:
 
 **Dominio 1 — Web (Dashboard):**
-1. Clique em **Adicionar Dominio**
-2. No campo **Dominio**: deixe o Easypanel gerar automaticamente (ele cria algo como `openhive-web-ABC123.sslip.io`) ou digite seu dominio se tiver
-3. No campo **Servico**: selecione **web**
-4. No campo **Porta**: digite **3000**
-5. Clique **Criar**
+- **Host**: `web.SEU_IP.sslip.io` (ex: `web.123.45.67.89.sslip.io`)
+- **Porta**: `3000`
+- **Servico Compose**: `web`
+- **Caminho**: `/`
+- Clique **Criar**
 
 **Dominio 2 — API (Backend):**
-1. Clique em **Adicionar Dominio**
-2. **Dominio**: deixe gerar automaticamente
-3. **Servico**: selecione **api**
-4. **Porta**: digite **3001**
-5. Clique **Criar**
+- **Host**: `api.SEU_IP.sslip.io` (ex: `api.123.45.67.89.sslip.io`)
+- **Porta**: `3001`
+- **Servico Compose**: `api`
+- **Caminho**: `/`
+- Clique **Criar**
 
 **Dominio 3 — MinIO (Storage de imagens):**
-1. Clique em **Adicionar Dominio**
-2. **Dominio**: deixe gerar automaticamente
-3. **Servico**: selecione **minio**
-4. **Porta**: digite **9000**
-5. Clique **Criar**
+- **Host**: `minio.SEU_IP.sslip.io` (ex: `minio.123.45.67.89.sslip.io`)
+- **Porta**: `9000`
+- **Servico Compose**: `minio`
+- **Caminho**: `/`
+- Clique **Criar**
 
-**Dominio 4 — MCP Server (opcional, para IDEs):**
-1. Clique em **Adicionar Dominio**
-2. **Dominio**: deixe gerar automaticamente
-3. **Servico**: selecione **mcp-server**
-4. **Porta**: digite **3002**
-5. Clique **Criar**
+**Dominio 4 — MCP Server (para IDEs, opcional):**
+- **Host**: `mcp.SEU_IP.sslip.io` (ex: `mcp.123.45.67.89.sslip.io`)
+- **Porta**: `3002`
+- **Servico Compose**: `mcp-server`
+- **Caminho**: `/`
+- Clique **Criar**
 
-Ao final, voce tera 4 dominios na lista. **Anote as URLs geradas do web e do minio** — voce vai usar no proximo passo.
+> **O que e sslip.io?** E um servico DNS gratuito. Quando voce acessa `web.123.45.67.89.sslip.io`, ele automaticamente resolve para o IP `123.45.67.89`. Nao precisa configurar nada nem comprar dominio. Se voce tiver um dominio proprio, pode usar ele no lugar (ex: `app.seusite.com`).
 
-### Passo 6: Atualizar as URLs no ambiente
+### Passo 7: Atualizar as URLs no ambiente
 
 1. Clique em **Ambiente** no menu lateral
-2. Adicione estas 2 linhas **no final** das variaveis que ja estao la, substituindo pelas URLs reais que o Easypanel gerou:
+2. Adicione estas 2 linhas **no final** das variaveis que ja estao la, trocando `SEU_IP` pelo IP real da sua VPS:
 
 ```bash
-FRONTEND_URL=https://COLE_AQUI_A_URL_DO_WEB
-MINIO_PUBLIC_URL=https://COLE_AQUI_A_URL_DO_MINIO
+FRONTEND_URL=https://web.SEU_IP.sslip.io
+MINIO_PUBLIC_URL=https://minio.SEU_IP.sslip.io
 ```
 
-**Exemplo real:** se o Easypanel gerou `openhive-web-abc123.sslip.io` para o web e `openhive-minio-def456.sslip.io` para o minio:
+**Exemplo real** (se seu IP e `123.45.67.89`):
 ```bash
-FRONTEND_URL=https://openhive-web-abc123.sslip.io
-MINIO_PUBLIC_URL=https://openhive-minio-def456.sslip.io
+FRONTEND_URL=https://web.123.45.67.89.sslip.io
+MINIO_PUBLIC_URL=https://minio.123.45.67.89.sslip.io
 ```
 
 3. Clique **Salvar**
 4. Clique **Implantar** (botao verde no topo) para aplicar as mudancas
 
-### Passo 7: Acessar e configurar
+### Passo 8: Acessar e configurar
 
-1. Abra a URL do **web** no navegador (a mesma que voce colocou no FRONTEND_URL)
+1. Abra `https://web.SEU_IP.sslip.io` no navegador (troque `SEU_IP` pelo IP real)
 2. Clique **Registrar** e crie sua conta (primeiro usuario vira Owner automaticamente)
 3. Va em **Configuracoes** no menu lateral e configure tudo pela interface web:
    - **Geracao de Imagens** — cole sua chave do Google Gemini ([pegue aqui](https://aistudio.google.com/))
    - **Instagram** — conecte sua conta (opcional)
    - **Telegram Bot** — cole o token do BotFather (opcional)
 
-> **Voce NAO precisa comprar um dominio.** O Easypanel gera URLs automaticas. Todas as integracoes (Gemini, Instagram, Telegram) sao configuradas pela interface web do OpenHive, nao por variaveis de ambiente.
+> **Resumo:** voce NAO precisa comprar um dominio. O sslip.io gera URLs automaticas a partir do IP da sua VPS. Todas as integracoes (Gemini, Instagram, Telegram) sao configuradas pela interface web do OpenHive, nao por variaveis de ambiente.
 
 ### Alternativa: criar servicos manualmente
 
