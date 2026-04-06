@@ -6,6 +6,7 @@ import { createPost } from './tools/createPost';
 import { generateImage } from './tools/generateImage';
 import { generateCaption } from './tools/generateCaption';
 import { schedulePost } from './tools/schedulePost';
+import { updatePost } from './tools/updatePost';
 import { listPosts } from './tools/listPosts';
 import { publishNow } from './tools/publishNow';
 import { uploadImage } from './tools/uploadImage';
@@ -104,6 +105,22 @@ function registerTools(server: McpServer) {
     },
     async ({ post_id, datetime }) => {
       const result = await schedulePost({ post_id, datetime });
+      return { content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }] };
+    },
+  );
+
+  server.tool(
+    'update_post',
+    'Atualiza um post existente (legenda, hashtags, agendamento). Se o post estiver agendado e voce mudar a data, o agendamento e atualizado automaticamente',
+    {
+      post_id: z.string().describe('ID do post'),
+      caption: z.string().optional().describe('Nova legenda'),
+      hashtags: z.array(z.string()).optional().describe('Novas hashtags'),
+      scheduled_at: z.string().optional().describe('Nova data/hora de agendamento (ISO 8601). Reagenda automaticamente se o post ja estiver agendado'),
+      status: z.enum(['DRAFT', 'SCHEDULED']).optional().describe('Novo status (DRAFT para cancelar agendamento)'),
+    },
+    async ({ post_id, caption, hashtags, scheduled_at, status }) => {
+      const result = await updatePost({ post_id, caption, hashtags, scheduled_at, status });
       return { content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }] };
     },
   );

@@ -29,6 +29,14 @@ export interface GenerateCaptionInput {
   max_length?: number;
 }
 
+export interface UpdatePostInput {
+  post_id: string;
+  caption?: string;
+  hashtags?: string[];
+  scheduled_at?: string;
+  status?: 'DRAFT' | 'SCHEDULED';
+}
+
 export interface SchedulePostInput {
   post_id: string;
   datetime: string;

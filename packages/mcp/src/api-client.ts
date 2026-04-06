@@ -27,6 +27,9 @@ export const api = {
   publishPost: (id: string, accountId?: string) =>
     request(`/api/posts/${id}/publish`, { method: 'POST', body: JSON.stringify({ accountId }) }),
 
+  updatePost: (id: string, body: Record<string, unknown>) =>
+    request(`/api/posts/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+
   schedulePost: (id: string, scheduledAt: string) =>
     request(`/api/posts/${id}/schedule`, { method: 'POST', body: JSON.stringify({ scheduledAt }) }),
 

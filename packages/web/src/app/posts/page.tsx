@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { api } from '../../lib/api';
-import { Plus, Trash2, Send, Calendar, X, Loader2, FileText, Image as ImageIcon, Layers, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Trash2, Send, Calendar, X, Loader2, FileText, Image as ImageIcon, Layers, ChevronLeft, ChevronRight, Pencil } from 'lucide-react';
 
 const STATUS_BADGE: Record<string, string> = {
   DRAFT: 'badge-draft',
@@ -31,6 +31,10 @@ export default function PostsList() {
   const [scheduleModal, setScheduleModal] = useState<string | null>(null);
   const [scheduleDate, setScheduleDate] = useState('');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [editModal, setEditModal] = useState<any | null>(null);
+  const [editCaption, setEditCaption] = useState('');
+  const [editHashtags, setEditHashtags] = useState('');
+  const [editScheduledAt, setEditScheduledAt] = useState('');
 
   async function loadPosts() {
     try {
@@ -69,6 +73,31 @@ export default function PostsList() {
       // Update local state immediately (API now returns instantly, publishes in background)
       setPosts((prev) => prev.map((p) => p.id === id ? { ...p, status: 'PUBLISHING' } : p));
     } catch (err: any) { alert(err.message || 'Erro ao publicar'); }
+    setActionLoading(null);
+  }
+
+  function openEditModal(post: any) {
+    setEditModal(post);
+    setEditCaption(post.caption || '');
+    setEditHashtags((post.hashtags || []).join(', '));
+    setEditScheduledAt(post.scheduledAt ? new Date(post.scheduledAt).toISOString().slice(0, 16) : '');
+  }
+
+  async function handleEditSave() {
+    if (!editModal) return;
+    setActionLoading(editModal.id);
+    try {
+      const body: Record<string, unknown> = {
+        caption: editCaption,
+        hashtags: editHashtags.split(',').map((h: string) => h.trim()).filter(Boolean),
+      };
+      if (editScheduledAt) {
+        body.scheduledAt = new Date(editScheduledAt).toISOString();
+      }
+      await api.updatePost(editModal.id, body);
+      setEditModal(null);
+      await loadPosts();
+    } catch (err: any) { alert(err.message || 'Erro ao salvar'); }
     setActionLoading(null);
   }
 
@@ -216,6 +245,15 @@ export default function PostsList() {
                         {new Date(post.scheduledAt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
                       </span>
                     )}
+                    {(post.status !== 'PUBLISHING' && post.status !== 'PUBLISHED') && (
+                      <button
+                        onClick={() => openEditModal(post)}
+                        className="px-2.5 py-1.5 rounded-badge text-xs bg-violet-50 text-violet-600 hover:bg-violet-100 transition-colors"
+                        title="Editar"
+                      >
+                        <Pencil className="w-3.5 h-3.5" strokeWidth={1.5} />
+                      </button>
+                    )}
                     <button
                       onClick={() => handleDelete(post.id)}
                       className="px-2.5 py-1.5 rounded-badge text-xs bg-red-50 text-status-failed hover:bg-red-100 transition-colors"
@@ -282,6 +320,74 @@ export default function PostsList() {
           </div>
         );
       })()}
+
+      {/* Edit Modal */}
+      {editModal && (
+        <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4 modal-backdrop" onClick={() => setEditModal(null)}>
+          <div className="bg-white rounded-card p-6 w-full max-w-md shadow-lg modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-10 h-10 rounded-xl bg-violet-50 flex items-center justify-center">
+                <Pencil className="w-5 h-5 text-violet-600" strokeWidth={1.5} />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-text-primary">Editar Post</h3>
+                <p className="text-xs text-text-secondary">Altere legenda, hashtags ou agendamento</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wider">Legenda</label>
+                <textarea
+                  value={editCaption}
+                  onChange={(e) => setEditCaption(e.target.value)}
+                  maxLength={2200}
+                  rows={4}
+                  className="input-field resize-none"
+                  placeholder="Legenda do post..."
+                />
+                <span className="text-[10px] text-text-muted mt-1 block text-right">{editCaption.length}/2200</span>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wider">Hashtags</label>
+                <input
+                  value={editHashtags}
+                  onChange={(e) => setEditHashtags(e.target.value)}
+                  placeholder="IA, Tech, Programacao (separadas por virgula)"
+                  className="input-field"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wider">
+                  {editModal.status === 'SCHEDULED' ? 'Reagendar para' : 'Agendar para'}
+                </label>
+                <input
+                  type="datetime-local"
+                  value={editScheduledAt}
+                  onChange={(e) => setEditScheduledAt(e.target.value)}
+                  className="input-field"
+                />
+                {editModal.status === 'SCHEDULED' && editScheduledAt && (
+                  <p className="text-[10px] text-primary mt-1 font-medium">O agendamento sera atualizado automaticamente</p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex gap-2 justify-end mt-5">
+              <button onClick={() => setEditModal(null)} className="btn-ghost text-xs">Cancelar</button>
+              <button
+                onClick={handleEditSave}
+                disabled={actionLoading !== null}
+                className="btn-cta text-xs"
+              >
+                {actionLoading ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Salvando...</> : 'Salvar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Schedule Modal */}
       {scheduleModal && (

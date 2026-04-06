@@ -141,7 +141,15 @@ router.post('/accounts', validate(addAccountSchema), async (req: AuthRequest, re
 
     res.json({ success: true, data: { id: account.id, username, isDefault: account.isDefault } });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: err?.message });
+    const msg = err?.message || '';
+    if (msg.includes('Unique constraint') && msg.includes('userId')) {
+      res.status(400).json({
+        success: false,
+        error: 'Banco de dados nao suporta multiplas contas. Execute "npx prisma migrate deploy" no servidor para aplicar a migration necessaria.',
+      });
+      return;
+    }
+    res.status(500).json({ success: false, error: msg });
   }
 });
 

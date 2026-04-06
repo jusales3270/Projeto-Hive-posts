@@ -1,7 +1,7 @@
 import { Response } from 'express';
 import { prisma } from '../config/database';
 import { AuthRequest } from '../middleware/auth.middleware';
-import { schedulePost, cancelScheduledPost, publishQueue } from '../services/scheduler.service';
+import { schedulePost, cancelScheduledPost, reschedulePost, publishQueue } from '../services/scheduler.service';
 import { resolveOwnerId } from '../helpers/resolveOwnerId';
 
 function paramId(req: AuthRequest): string {
@@ -145,12 +145,35 @@ export async function updatePost(req: AuthRequest, res: Response) {
   try {
     const id = paramId(req);
     const userId = await resolveOwnerId(req.userId!);
-    const post = await prisma.post.updateMany({ where: { id, userId }, data: req.body });
-    if (post.count === 0) { res.status(404).json({ success: false, error: 'Post not found' }); return; }
+
+    const existing = await prisma.post.findFirst({ where: { id, userId } });
+    if (!existing) { res.status(404).json({ success: false, error: 'Post not found' }); return; }
+
+    const { scheduledAt, ...otherData } = req.body;
+    const updateData: Record<string, unknown> = { ...otherData };
+
+    // Handle rescheduling
+    if (scheduledAt !== undefined) {
+      const newDate = new Date(scheduledAt);
+      if (isNaN(newDate.getTime())) {
+        res.status(400).json({ success: false, error: 'Data invalida' });
+        return;
+      }
+      updateData.scheduledAt = newDate;
+
+      if (existing.status === 'SCHEDULED') {
+        await reschedulePost(id, newDate);
+      } else if (existing.status === 'DRAFT' || existing.status === 'FAILED') {
+        await schedulePost(id, newDate);
+        updateData.status = 'SCHEDULED';
+      }
+    }
+
+    await prisma.post.update({ where: { id }, data: updateData });
     const updated = await prisma.post.findUnique({ where: { id }, include: { images: { orderBy: { order: 'asc' } } } });
     res.json({ success: true, data: updated });
-  } catch (err) {
-    res.status(500).json({ success: false, error: 'Failed to update post' });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err?.message || 'Failed to update post' });
   }
 }
 

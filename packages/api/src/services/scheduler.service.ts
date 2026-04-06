@@ -15,4 +15,9 @@ export async function cancelScheduledPost(postId: string) {
   if (job) await job.remove();
 }
 
+export async function reschedulePost(postId: string, newScheduledAt: Date) {
+  await cancelScheduledPost(postId);
+  await schedulePost(postId, newScheduledAt);
+}
+
 export { publishQueue };
