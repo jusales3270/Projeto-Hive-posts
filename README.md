@@ -4,6 +4,12 @@ Plataforma open-source de criacao e gestao de conteudo para redes sociais com IA
 
 Crie posts com imagens e legendas geradas por IA, agende publicacoes, extraia clips de videos do YouTube, gerencie tarefas, projetos e funis de vendas. Integra com Instagram, Telegram, Claude e Gemini (via MCP).
 
+## Tutorial em video
+
+[![Tutorial OpenHive AI](https://img.youtube.com/vi/wjQiGIeOEzo/maxresdefault.jpg)](https://youtu.be/wjQiGIeOEzo)
+
+> Clique na imagem acima para assistir o tutorial completo no YouTube.
+
 ---
 
 ## O que o OpenHive faz
