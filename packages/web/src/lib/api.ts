@@ -1,4 +1,4 @@
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 let token: string | null = null;
 
@@ -192,30 +192,17 @@ export const api = {
       body: JSON.stringify({ token, name, password }),
     }),
 
-  // Funnels
-  listFunnels: () => request<any[]>('/api/funnels'),
-  getFunnel: (id: string) => request<any>(`/api/funnels/${id}`),
-  createFunnel: (body: Record<string, unknown>) =>
-    request('/api/funnels', { method: 'POST', body: JSON.stringify(body) }),
-  updateFunnel: (id: string, body: Record<string, unknown>) =>
-    request(`/api/funnels/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
-  deleteFunnel: (id: string) => request(`/api/funnels/${id}`, { method: 'DELETE' }),
-  addStage: (funnelId: string, body: Record<string, unknown>) =>
-    request(`/api/funnels/${funnelId}/stages`, { method: 'POST', body: JSON.stringify(body) }),
-  updateStage: (funnelId: string, stageId: string, body: Record<string, unknown>) =>
-    request(`/api/funnels/${funnelId}/stages/${stageId}`, { method: 'PUT', body: JSON.stringify(body) }),
-  deleteStage: (funnelId: string, stageId: string) =>
-    request(`/api/funnels/${funnelId}/stages/${stageId}`, { method: 'DELETE' }),
-  addStep: (funnelId: string, stageId: string, body: Record<string, unknown>) =>
-    request(`/api/funnels/${funnelId}/stages/${stageId}/steps`, { method: 'POST', body: JSON.stringify(body) }),
-  updateStep: (funnelId: string, stageId: string, stepId: string, body: Record<string, unknown>) =>
-    request(`/api/funnels/${funnelId}/stages/${stageId}/steps/${stepId}`, { method: 'PUT', body: JSON.stringify(body) }),
-  deleteStep: (funnelId: string, stageId: string, stepId: string) =>
-    request(`/api/funnels/${funnelId}/stages/${stageId}/steps/${stepId}`, { method: 'DELETE' }),
-  reorderStages: (funnelId: string, stageIds: string[]) =>
-    request(`/api/funnels/${funnelId}/stages/reorder`, { method: 'PUT', body: JSON.stringify({ stageIds }) }),
-  moveStep: (funnelId: string, stepId: string, body: { targetStageId: string; order: number }) =>
-    request(`/api/funnels/${funnelId}/steps/${stepId}/move`, { method: 'PUT', body: JSON.stringify(body) }),
+  // Transcriptor
+  processVideoTranscription: (url: string, outputType: 'transcription' | 'report') =>
+    request<{ success: boolean; jobId: string; transcript?: string; reportText?: string; duration?: string; platform?: string }>('/api/transcriptor/process', {
+      method: 'POST',
+      body: JSON.stringify({ url, outputType }),
+    }),
+  generateVideoPdfUrl: (jobId: string, type: 'transcription' | 'report') => {
+    const t = getToken();
+    const tokenParams = t ? `&token=${t}` : '';
+    return `${BASE_URL}/api/transcriptor/generate-pdf?jobId=${jobId}&type=${type}${tokenParams}`;
+  },
 
   // Video Clips
   analyzeVideo: (body: Record<string, unknown>) =>

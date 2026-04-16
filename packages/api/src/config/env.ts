@@ -1,5 +1,27 @@
-import 'dotenv/config';
+import { config } from 'dotenv';
+import { resolve } from 'path';
+import { existsSync } from 'fs';
 import { z } from 'zod';
+
+// Find .env from monorepo root (walk up from current dir)
+function findEnvFile(): string | undefined {
+  let dir = process.cwd();
+  for (let i = 0; i < 5; i++) {
+    const envPath = resolve(dir, '.env');
+    if (existsSync(envPath)) return envPath;
+    const parent = resolve(dir, '..');
+    if (parent === dir) break;
+    dir = parent;
+  }
+  return undefined;
+}
+
+const envPath = findEnvFile();
+if (envPath) {
+  config({ path: envPath });
+} else {
+  config(); // fallback to default behavior
+}
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
@@ -16,6 +38,7 @@ const envSchema = z.object({
 
   NANO_BANANA_API_KEY: z.string().optional(),
   NANO_BANANA_PROVIDER: z.enum(['google', 'nanobananaapi', 'fal']).default('google'),
+  GEMINI_API_KEY: z.string().optional(),
 
   TELEGRAM_BOT_TOKEN: z.string().optional(),
   TELEGRAM_ALLOWED_CHAT_IDS: z.string().optional(),
