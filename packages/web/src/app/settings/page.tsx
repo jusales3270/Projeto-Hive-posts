@@ -18,9 +18,10 @@ interface SettingField {
 interface ServiceConfig {
   name: string;
   description: string;
-  icon: any;
+  icon?: any;
+  imageUrl?: string;
   iconBg: string;
-  iconColor: string;
+  iconColor?: string;
   fields: SettingField[];
 }
 
@@ -28,9 +29,8 @@ const SERVICES: ServiceConfig[] = [
   {
     name: 'Facebook App (para token Instagram)',
     description: 'Necessario para trocar token short-lived por long-lived (60 dias)',
-    icon: Camera,
-    iconBg: 'bg-blue-50',
-    iconColor: 'text-blue-600',
+    imageUrl: '/facebook-logo.png',
+    iconBg: 'bg-white',
     fields: [
       { key: 'FACEBOOK_APP_ID', label: 'App ID', placeholder: '953530xxxxxxx (topo do Facebook Developer)' },
       { key: 'FACEBOOK_APP_SECRET', label: 'App Secret', placeholder: 'Chave secreta do app do Instagram' },
@@ -39,9 +39,8 @@ const SERVICES: ServiceConfig[] = [
   {
     name: 'Geracao de Imagens (Gemini)',
     description: 'Geracao de imagens e legendas com IA via Google Gemini',
-    icon: Zap,
-    iconBg: 'bg-amber-50',
-    iconColor: 'text-amber-600',
+    imageUrl: '/gemini-logo.png',
+    iconBg: 'bg-white',
     fields: [
       { key: 'NANO_BANANA_API_KEY', label: 'Google Gemini API Key', placeholder: 'AIzaSyxxxxxxxxx...' },
     ],
@@ -49,9 +48,8 @@ const SERVICES: ServiceConfig[] = [
   {
     name: 'Telegram Bot',
     description: 'Criacao e gerenciamento de posts via Telegram',
-    icon: Send,
-    iconBg: 'bg-blue-50',
-    iconColor: 'text-blue-500',
+    imageUrl: '/telegram-logo.png',
+    iconBg: 'bg-white',
     fields: [
       { key: 'TELEGRAM_BOT_TOKEN', label: 'Bot Token', placeholder: '123456:ABCxxxxxxx...' },
       { key: 'TELEGRAM_ALLOWED_CHAT_IDS', label: 'Chat IDs (separados por virgula)', placeholder: '123456789,987654321' },
@@ -332,8 +330,8 @@ export default function SettingsPage() {
         <p className="text-[11px] font-semibold text-text-muted uppercase tracking-wider mb-3">Contas do Instagram</p>
         <div className="card p-5 mb-6">
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-pink-50 to-purple-50 flex items-center justify-center flex-shrink-0">
-              <Camera className="w-6 h-6 text-pink-500" strokeWidth={1.5} />
+            <div className="w-12 h-12 rounded-2xl overflow-hidden flex items-center justify-center flex-shrink-0">
+              <img src="/instagram-logo.png" alt="Instagram" className="w-full h-full object-cover" />
             </div>
             <div className="flex-1">
               <div className="flex items-center justify-between mb-3">
@@ -441,8 +439,12 @@ export default function SettingsPage() {
           return (
             <div key={service.name} className="card p-5">
               <div className="flex items-start gap-4">
-                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${service.iconBg}`}>
-                  <Icon className={`w-6 h-6 ${service.iconColor}`} strokeWidth={1.5} />
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${service.iconBg} ${service.imageUrl ? 'overflow-hidden' : ''}`}>
+                  {service.imageUrl ? (
+                    <img src={service.imageUrl} alt={service.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <Icon className={`w-6 h-6 ${service.iconColor}`} strokeWidth={1.5} />
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">

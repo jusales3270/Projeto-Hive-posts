@@ -257,19 +257,19 @@ export default function NewPost() {
               <div className="flex items-center bg-bg-main rounded-lg p-0.5">
                 <button
                   onClick={() => setGenMode('ai')}
-                  className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${genMode === 'ai' ? 'bg-white text-primary shadow-sm' : 'text-text-muted hover:text-text-primary'}`}
+                  className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${genMode === 'ai' ? 'bg-[var(--bg-card)] text-primary shadow-sm' : 'text-text-muted hover:text-text-primary'}`}
                 >
                   IA
                 </button>
                 <button
                   onClick={() => setGenMode('template')}
-                  className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${genMode === 'template' ? 'bg-white text-primary shadow-sm' : 'text-text-muted hover:text-text-primary'}`}
+                  className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${genMode === 'template' ? 'bg-[var(--bg-card)] text-primary shadow-sm' : 'text-text-muted hover:text-text-primary'}`}
                 >
                   Template
                 </button>
                 <button
                   onClick={() => setGenMode('misto')}
-                  className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${genMode === 'misto' ? 'bg-white text-primary shadow-sm' : 'text-text-muted hover:text-text-primary'}`}
+                  className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${genMode === 'misto' ? 'bg-[var(--bg-card)] text-primary shadow-sm' : 'text-text-muted hover:text-text-primary'}`}
                 >
                   Misto
                 </button>
@@ -313,7 +313,7 @@ export default function NewPost() {
                           className={`p-2.5 rounded-lg text-center transition-all border ${
                             selectedTemplate === t.id
                               ? 'border-primary bg-primary/5 text-primary'
-                              : 'border-border bg-white text-text-secondary hover:border-primary/30'
+                              : 'border-border bg-[var(--bg-card)] text-text-secondary hover:border-primary/30'
                           }`}
                         >
                           <div className="text-lg mb-0.5">{t.emoji}</div>
@@ -499,7 +499,7 @@ export default function NewPost() {
                   className={`py-3 px-3 rounded-btn text-sm border transition-all duration-200 ${
                     aspectRatio === ar.value
                       ? 'bg-primary/[0.08] border-primary text-primary shadow-sm'
-                      : 'bg-white border-border text-text-secondary hover:border-primary/50'
+                      : 'bg-[var(--bg-card)] border-border text-text-secondary hover:border-primary/50'
                   }`}
                 >
                   <span className="font-bold block">{ar.label}</span>
@@ -562,7 +562,7 @@ export default function NewPost() {
                 <a href={postFile.url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline truncate flex-1">
                   {postFile.name || 'Arquivo'}
                 </a>
-                <button onClick={() => setPostFile({ url: '', name: '' })} className="p-1 rounded hover:bg-white transition-colors flex-shrink-0">
+                <button onClick={() => setPostFile({ url: '', name: '' })} className="p-1 rounded hover:bg-[var(--bg-main)] transition-colors flex-shrink-0">
                   <X className="w-3.5 h-3.5 text-text-muted" />
                 </button>
               </div>
@@ -625,7 +625,7 @@ export default function NewPost() {
         <div className="lg:sticky lg:top-8 lg:self-start">
           <div className="card p-5">
             <p className="text-xs font-semibold text-text-secondary mb-4 uppercase tracking-wider">Preview do Post</p>
-            <div className="bg-white rounded-2xl overflow-hidden border border-border">
+            <div className="bg-[var(--bg-card)] rounded-2xl overflow-hidden border border-border">
               {/* Instagram Header */}
               <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
                 <div className="w-9 h-9 rounded-full flex items-center justify-center bg-gradient-to-br from-primary to-accent-pink">
@@ -662,7 +662,7 @@ export default function NewPost() {
                       {activeImageIndex > 0 && (
                         <button
                           onClick={() => setActiveImageIndex((i) => i - 1)}
-                          className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 rounded-full flex items-center justify-center shadow-sm hover:bg-white transition-colors"
+                          className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-[var(--bg-card)]/80 rounded-full flex items-center justify-center shadow-sm hover:bg-[var(--bg-card)] transition-colors"
                         >
                           <ChevronLeft className="w-5 h-5 text-text-primary" />
                         </button>
@@ -670,7 +670,7 @@ export default function NewPost() {
                       {activeImageIndex < images.length - 1 && (
                         <button
                           onClick={() => setActiveImageIndex((i) => i + 1)}
-                          className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 rounded-full flex items-center justify-center shadow-sm hover:bg-white transition-colors"
+                          className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-[var(--bg-card)]/80 rounded-full flex items-center justify-center shadow-sm hover:bg-[var(--bg-card)] transition-colors"
                         >
                           <ChevronRight className="w-5 h-5 text-text-primary" />
                         </button>
@@ -682,7 +682,7 @@ export default function NewPost() {
                             key={idx}
                             onClick={() => setActiveImageIndex(idx)}
                             className={`h-2 rounded-full transition-all ${
-                              idx === activeImageIndex ? 'bg-primary w-4' : 'bg-white/60 w-2'
+                              idx === activeImageIndex ? 'bg-primary w-4' : 'bg-[var(--bg-card)]/60 w-2'
                             }`}
                           />
                         ))}
@@ -731,7 +731,7 @@ export default function NewPost() {
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 cursor-pointer modal-backdrop" onClick={() => setShowFullImage(false)}>
           <div className="relative modal-content">
             <img src={images[activeImageIndex]?.url} alt="Full size" className="max-w-full max-h-[85vh] object-contain rounded-card shadow-2xl" />
-            <button onClick={() => setShowFullImage(false)} className="absolute -top-3 -right-3 w-8 h-8 bg-white rounded-full shadow-md flex items-center justify-center text-text-secondary hover:text-text-primary transition-colors">
+            <button onClick={() => setShowFullImage(false)} className="absolute -top-3 -right-3 w-8 h-8 bg-[var(--bg-card)] rounded-full shadow-md flex items-center justify-center text-text-secondary hover:text-text-primary transition-colors">
               <X className="w-4 h-4" strokeWidth={2} />
             </button>
           </div>

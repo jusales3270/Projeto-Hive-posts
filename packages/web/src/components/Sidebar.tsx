@@ -2,8 +2,11 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, PlusSquare, FileText, Calendar, CheckSquare, FolderKanban, Settings, LogOut, Hexagon, Users, GitBranch, Film, Palette, Mic } from 'lucide-react';
+import { Home, PlusSquare, FileText, Calendar, CheckSquare, FolderKanban, Settings, LogOut, Hexagon, Users, Mic, Palette } from 'lucide-react';
 import { useAuth } from './AuthProvider';
+import { ThemeToggle } from './ThemeToggle';
+import { useTheme } from 'next-themes';
+import { useEffect, useState } from 'react';
 
 const links = [
   { href: '/', label: 'Dashboard', icon: Home, page: 'dashboard' },
@@ -21,18 +24,20 @@ const links = [
 export function Sidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const { theme, resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const isOwner = user?.role === 'OWNER' || !user?.role;
   const allowedPages: string[] = user?.allowedPages || [];
 
   const visibleLinks = links.filter((link) => {
-    // Owner sees everything
     if (isOwner) return true;
-    // Settings is always visible
     if (link.page === 'settings') return true;
-    // Team is only for OWNER/ADMIN
     if (link.page === 'team') return user?.role === 'ADMIN';
-    // Filter by allowedPages
     if (allowedPages.length === 0) return true;
     return allowedPages.includes(link.page);
   });
@@ -40,23 +45,35 @@ export function Sidebar() {
   const navLinks = visibleLinks.filter((l) => l.page !== 'settings');
   const settingsLink = visibleLinks.find((l) => l.page === 'settings');
 
+  // Determine logo based on theme
+  const currentTheme = resolvedTheme || theme;
+  const logoSrc = currentTheme === 'dark' ? '/logos/logo-white.png' : '/logos/logo-black.png';
+
   return (
-    <aside className="fixed left-0 top-0 h-full w-60 bg-white border-r border-border flex flex-col z-20">
+    <aside className="fixed left-0 top-0 h-full w-60 bg-bg-card border-r border-border flex flex-col z-20">
       {/* Logo Area */}
-      <div className="p-6 flex flex-col items-start gap-1">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary via-accent-pink to-accent-orange flex items-center justify-center text-white shadow-sm">
-            <Hexagon className="w-5 h-5" strokeWidth={2.5} fill="currentColor" />
+      <div className="p-6 flex flex-col items-start gap-4">
+        <div className="flex items-center justify-between w-full">
+          <div className="flex items-center gap-2">
+            {mounted ? (
+              <div className="relative h-12 w-32">
+                <img 
+                  src={logoSrc} 
+                  alt="OpenHive Logo" 
+                  className="h-full w-full object-contain object-left transition-opacity duration-300"
+                />
+              </div>
+            ) : (
+              <div className="h-12 w-32 animate-pulse bg-gray-200 dark:bg-gray-800 rounded-lg" />
+            )}
           </div>
-          <span className="font-bold text-[20px] tracking-tight bg-gradient-to-r from-primary to-accent-pink bg-clip-text text-transparent">
-            OpenHive
-          </span>
+          <ThemeToggle />
         </div>
-        <span className="text-[10px] font-bold tracking-[1px] text-text-muted ml-10">AI PLATFORM</span>
+        <span className="text-[9px] font-bold tracking-[2px] text-text-muted uppercase">Secretaria de Comunicação</span>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-2 flex flex-col gap-1">
+      <nav className="flex-1 px-3 py-2 flex flex-col gap-1 overflow-y-auto">
         <span className="text-[11px] font-bold text-text-muted px-4 mb-2 mt-2 tracking-wider uppercase">Menu</span>
 
         {navLinks.map((link) => {
@@ -104,7 +121,7 @@ export function Sidebar() {
       <div className="px-3 pb-5 border-t border-border pt-3">
         <button
           onClick={logout}
-          className="flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-[14px] font-medium text-text-muted hover:text-status-failed hover:bg-red-50 transition-all duration-200"
+          className="flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-[14px] font-medium text-text-muted hover:text-status-failed hover:bg-status-failed/10 transition-all duration-200"
         >
           <LogOut className="w-5 h-5" strokeWidth={1.5} />
           Sair

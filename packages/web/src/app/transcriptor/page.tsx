@@ -85,8 +85,8 @@ export default function TranscriptorPage() {
         {/* Lado Esquerdo: Formulario */}
         <div className="card p-6 border border-border flex flex-col gap-5 h-fit">
           <div className="flex items-center gap-2.5 mb-2">
-            <div className="w-8 h-8 rounded-lg bg-pink-50 flex items-center justify-center">
-              <ExternalLink className="w-4 h-4 text-accent-pink" strokeWidth={2} />
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <ExternalLink className="w-4 h-4 text-primary" strokeWidth={2} />
             </div>
             <h2 className="text-section-title text-text-primary">Novo Processamento</h2>
           </div>

@@ -319,14 +319,14 @@ export default function Dashboard() {
               </div>
               <div className="w-px h-6 bg-border" />
               <div className="flex items-center gap-1.5">
-                <Heart className="w-4 h-4 text-pink-500" strokeWidth={1.5} />
-                <span className="text-sm font-bold text-pink-600">{formatNumber(totalLikes)}</span>
+                <Heart className="w-4 h-4 text-primary" strokeWidth={1.5} />
+                <span className="text-sm font-bold text-primary">{formatNumber(totalLikes)}</span>
                 <span className="text-[11px] text-text-secondary">Curtidas</span>
               </div>
               <div className="w-px h-6 bg-border" />
               <div className="flex items-center gap-1.5">
-                <MessageCircle className="w-4 h-4 text-purple-500" strokeWidth={1.5} />
-                <span className="text-sm font-bold text-purple-600">{formatNumber(totalComments)}</span>
+                <MessageCircle className="w-4 h-4 text-accent-pink" strokeWidth={1.5} />
+                <span className="text-sm font-bold text-accent-pink">{formatNumber(totalComments)}</span>
                 <span className="text-[11px] text-text-secondary">Comentarios</span>
               </div>
               <div className="w-px h-6 bg-border" />
@@ -405,8 +405,8 @@ export default function Dashboard() {
         </Link>
         <Link href="/projects" className="card p-5 border border-border hover:border-primary hover:-translate-y-0.5 group cursor-pointer">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-purple-50 group-hover:bg-purple-100 transition-colors">
-              <FolderKanban className="w-5 h-5 text-purple-600" strokeWidth={1.5} />
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-primary/10 group-hover:bg-primary/20 transition-colors">
+              <FolderKanban className="w-5 h-5 text-primary" strokeWidth={1.5} />
             </div>
             <div>
               <p className="text-[15px] font-bold text-text-primary">Projetos</p>

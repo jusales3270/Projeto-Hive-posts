@@ -1,25 +1,26 @@
 import type { Config } from 'tailwindcss';
 
 const config: Config = {
+  darkMode: 'class',
   content: ['./src/**/*.{ts,tsx}'],
   theme: {
     extend: {
       colors: {
         // Backgrounds
-        'bg-main': '#F8F7F4',
-        'bg-card': '#FFFFFF',
-        'bg-card-hover': '#FAFAF8',
+        'bg-main': 'var(--bg-main)',
+        'bg-card': 'var(--bg-card)',
+        'bg-card-hover': 'var(--bg-card-hover)',
 
-        // Primary (roxo)
+        // Primary (Azul SECOM)
         primary: {
-          DEFAULT: '#6C5CE7',
-          light: '#A29BFE',
-          dark: '#5A4BD1',
+          DEFAULT: '#00BAFF',
+          light: '#05D5FF',
+          dark: '#0082FF',
         },
 
-        // Accent
-        'accent-pink': '#E84393',
-        'accent-orange': '#FDCB6E',
+        // Accent Blue/Cyan variants
+        'accent-pink': '#05D5FF', // Map old pink to cyan
+        'accent-orange': '#0082FF', // Map old orange to deep blue
 
         // Status
         'status-scheduled': '#0984E3',
@@ -28,12 +29,12 @@ const config: Config = {
         'status-failed': '#D63031',
 
         // Text
-        'text-primary': '#2D3436',
-        'text-secondary': '#636E72',
-        'text-muted': '#B2BEC3',
+        'text-primary': 'var(--text-primary)',
+        'text-secondary': 'var(--text-secondary)',
+        'text-muted': 'var(--text-muted)',
 
         // Border
-        border: '#E8E6E1',
+        border: 'var(--border)',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
@@ -42,8 +43,8 @@ const config: Config = {
         sm: '0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06)',
         md: '0 4px 12px rgba(0,0,0,0.05), 0 2px 4px rgba(0,0,0,0.04)',
         lg: '0 10px 30px rgba(0,0,0,0.08)',
-        'cta': '0 4px 14px rgba(108, 92, 231, 0.3)',
-        'cta-hover': '0 6px 20px rgba(108, 92, 231, 0.4)',
+        'cta': '0 4px 14px rgba(0, 186, 255, 0.3)',
+        'cta-hover': '0 6px 20px rgba(0, 186, 255, 0.4)',
       },
       borderRadius: {
         'card': '16px',
