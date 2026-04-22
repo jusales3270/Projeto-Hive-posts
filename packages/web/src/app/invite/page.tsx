@@ -3,7 +3,8 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { api, setToken } from '../../lib/api';
-import { Zap, Loader2, CheckCircle, XCircle } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle } from 'lucide-react';
+import { useTheme } from 'next-themes';
 
 function InviteContent() {
   const searchParams = useSearchParams();
@@ -17,6 +18,16 @@ function InviteContent() {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+
+  const { theme, resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const currentTheme = resolvedTheme || theme;
+  const logoSrc = currentTheme === 'dark' ? '/logos/logo-white.png' : '/logos/logo-black.png';
 
   useEffect(() => {
     if (!token) {
@@ -102,16 +113,20 @@ function InviteContent() {
 
       <div className="relative w-full max-w-md mx-4">
         {/* Logo */}
-        <div className="flex items-center justify-center gap-3 mb-8">
-          <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-gradient-to-br from-primary to-accent-pink shadow-cta">
-            <Zap className="w-7 h-7 text-white" strokeWidth={2.5} />
+        <div className="flex flex-col items-center mb-8">
+          <div className="h-20 w-56 mb-5 relative flex items-center justify-center">
+            {mounted ? (
+              <img 
+                src={logoSrc} 
+                alt="SeCom Logo" 
+                className="max-h-full max-w-full object-contain transition-opacity duration-300"
+              />
+            ) : (
+              <div className="w-full h-full animate-pulse bg-gray-200 dark:bg-gray-800 rounded-lg" />
+            )}
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-text-primary tracking-tight">
-              Insta<span className="bg-gradient-to-r from-primary to-accent-pink bg-clip-text text-transparent">Post</span>
-            </h1>
-            <span className="text-xs font-semibold text-text-muted uppercase tracking-[0.1em]">AI Platform</span>
-          </div>
+          <h1 className="text-2xl font-bold text-text-primary tracking-tight">Criar Conta</h1>
+          <p className="text-text-secondary text-sm mt-2">Junte-se à equipe no SeCom Platform</p>
         </div>
 
         <div className="bg-white rounded-card p-8 shadow-lg border border-border">

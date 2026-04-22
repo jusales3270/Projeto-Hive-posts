@@ -31,7 +31,7 @@ const ALL_PAGES = [
   { slug: 'posts', label: 'Posts' },
   { slug: 'calendar', label: 'Calendario' },
   { slug: 'tasks', label: 'Tarefas' },
-  { slug: 'projects', label: 'Projetos' },
+
   { slug: 'funnels', label: 'Funis' },
 ];
 

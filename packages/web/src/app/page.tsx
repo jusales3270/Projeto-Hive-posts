@@ -403,17 +403,6 @@ export default function Dashboard() {
             </div>
           </div>
         </Link>
-        <Link href="/projects" className="card p-5 border border-border hover:border-primary hover:-translate-y-0.5 group cursor-pointer">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-primary/10 group-hover:bg-primary/20 transition-colors">
-              <FolderKanban className="w-5 h-5 text-primary" strokeWidth={1.5} />
-            </div>
-            <div>
-              <p className="text-[15px] font-bold text-text-primary">Projetos</p>
-              <p className="text-[13px] text-text-secondary">Cursos</p>
-            </div>
-          </div>
-        </Link>
         <Link href="/settings" className="card p-5 border border-border hover:border-primary hover:-translate-y-0.5 group cursor-pointer">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-gray-100 group-hover:bg-gray-200 transition-colors">

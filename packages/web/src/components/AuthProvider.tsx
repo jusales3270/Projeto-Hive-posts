@@ -1,11 +1,11 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { api, setToken, getToken } from '../lib/api';
 import { Zap, Loader2 } from 'lucide-react';
 
-const PUBLIC_PATHS = ['/invite'];
+const PUBLIC_PATHS = ['/invite', '/login'];
 
 interface AuthContextType {
   user: any;
@@ -25,11 +25,10 @@ export function useAuth() {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const isPublicPath = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
-  // --- DEV BYPASS: remove estas duas linhas para reativar o login ---
-  const [user, setUser] = useState<any>({ id: 'local-dev', name: 'Dev User', email: 'dev@localhost' });
-  const [loading, setLoading] = useState(false);
-  // --- FIM BYPASS ---
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const t = getToken();
@@ -41,12 +40,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .catch(() => {
           setToken(null);
           setUser(null);
+          if (!isPublicPath) router.push('/login');
         })
         .finally(() => setLoading(false));
     } else {
       setLoading(false);
+      if (!isPublicPath) router.push('/login');
     }
-  }, []);
+  }, [isPublicPath, router]);
 
   const login = async (email: string, password: string) => {
     const result = await api.login(email, password);
@@ -66,6 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(null);
     setUser(null);
     localStorage.removeItem('user');
+    router.push('/login');
   };
 
   if (loading && !isPublicPath) {

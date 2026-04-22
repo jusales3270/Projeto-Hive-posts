@@ -58,7 +58,10 @@ export async function listTasks(req: AuthRequest, res: Response) {
         skip,
         take,
         orderBy: [{ recordDate: 'asc' }, { priority: 'desc' }, { createdAt: 'desc' }],
-        include: { project: { select: { id: true, title: true } } },
+        include: { 
+          project: { select: { id: true, title: true } },
+          assignedTo: { select: { id: true, name: true, email: true } }
+        },
       }),
       prisma.task.count({ where }),
     ]);
@@ -75,7 +78,10 @@ export async function getTask(req: AuthRequest, res: Response) {
     const userId = await resolveOwnerId(req.userId!);
     const task = await prisma.task.findFirst({
       where: { id, userId },
-      include: { project: { select: { id: true, title: true } } },
+      include: { 
+        project: { select: { id: true, title: true } },
+        assignedTo: { select: { id: true, name: true, email: true } }
+      },
     });
     if (!task) { res.status(404).json({ success: false, error: 'Task not found' }); return; }
     res.json({ success: true, data: task });

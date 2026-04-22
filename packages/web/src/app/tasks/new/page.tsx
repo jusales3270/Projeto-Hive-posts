@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '../../../lib/api';
-import { ArrowLeft, Save, Megaphone, Upload, FileText, X, Loader2, Link as LinkIcon } from 'lucide-react';
+import { ArrowLeft, Save, Megaphone, Upload, FileText, X, Loader2, Link as LinkIcon, User } from 'lucide-react';
 
 const PLATFORMS = [
   { value: 'YOUTUBE', label: 'YouTube' },
@@ -21,30 +21,55 @@ const PRIORITIES = [
   { value: 'URGENT', label: 'Urgente', color: 'bg-red-50 text-status-failed border-red-200' },
 ];
 
-function FileUploadField({ label, fileUrl, fileName, uploading, onUpload, onRemove }: {
+function FileUploadField({ label, files, uploading, onUpload, onRemove }: {
   label: string;
-  fileUrl: string;
-  fileName: string;
+  files: { url: string; name: string }[];
   uploading: boolean;
-  onUpload: (file: File) => void;
-  onRemove: () => void;
+  onUpload: (files: File[]) => void;
+  onRemove: (index: number) => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const isImage = (name: string) => /\.(jpg|jpeg|png|gif|webp)$/i.test(name);
   return (
     <div className="mt-3">
-      <input ref={inputRef} type="file" className="hidden" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv" onChange={(e) => { if (e.target.files?.[0]) onUpload(e.target.files[0]); e.target.value = ''; }} />
-      {fileUrl ? (
-        <div className="flex items-center gap-2 p-2.5 rounded-lg bg-bg-main border border-border">
-          <FileText className="w-4 h-4 text-primary flex-shrink-0" strokeWidth={1.5} />
-          <a href={fileUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline truncate flex-1">{fileName || 'Arquivo'}</a>
-          <button onClick={onRemove} className="p-1 rounded hover:bg-white transition-colors flex-shrink-0"><X className="w-3.5 h-3.5 text-text-muted" /></button>
+      <input ref={inputRef} type="file" multiple className="hidden" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.png,.jpg,.jpeg,.gif,.webp" onChange={(e) => { 
+        if (e.target.files?.length) onUpload(Array.from(e.target.files)); 
+        e.target.value = ''; 
+      }} />
+      
+      {files.length > 0 && (
+        <div className="space-y-2 mb-3">
+          {files.map((file, idx) => {
+            const isImg = isImage(file.name || file.url);
+            return (
+            <div key={idx} className="flex items-center gap-3 p-2.5 rounded-lg bg-bg-main border border-border shadow-sm">
+              {isImg ? (
+                <div className="w-10 h-10 rounded-md overflow-hidden bg-bg-card flex-shrink-0 border border-border">
+                  <img src={file.url} alt={file.name} className="w-full h-full object-cover" />
+                </div>
+              ) : (
+                <div className="w-10 h-10 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0 text-primary">
+                  <FileText className="w-5 h-5" strokeWidth={1.5} />
+                </div>
+              )}
+              <div className="flex-1 min-w-0 flex flex-col">
+                <a href={file.url} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-text-primary hover:text-primary hover:underline truncate">
+                  {file.name || 'Arquivo'}
+                </a>
+                <span className="text-[10px] text-text-muted uppercase tracking-wider mt-0.5">{isImg ? 'Imagem' : 'Documento'}</span>
+              </div>
+              <button type="button" onClick={() => onRemove(idx)} className="p-1.5 rounded-md hover:bg-status-failed/10 hover:text-status-failed transition-colors flex-shrink-0 text-text-muted">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )})}
         </div>
-      ) : (
-        <button onClick={() => inputRef.current?.click()} disabled={uploading} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-border text-xs font-medium text-text-secondary hover:border-primary hover:text-primary transition-colors">
-          {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" strokeWidth={2} />}
-          {uploading ? 'Enviando...' : label}
-        </button>
       )}
+      
+      <button type="button" onClick={() => inputRef.current?.click()} disabled={uploading} className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-border text-xs font-medium text-text-secondary hover:border-primary hover:text-primary transition-colors">
+        {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" strokeWidth={2} />}
+        {uploading ? 'Enviando...' : label}
+      </button>
     </div>
   );
 }
@@ -53,10 +78,11 @@ export default function NewTask() {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [projects, setProjects] = useState<any[]>([]);
+  const [members, setMembers] = useState<any[]>([]);
   const [scriptUploading, setScriptUploading] = useState(false);
   const [briefingUploading, setBriefingUploading] = useState(false);
-  const [scriptFile, setScriptFile] = useState({ url: '', name: '' });
-  const [briefingFile, setBriefingFile] = useState({ url: '', name: '' });
+  const [scriptFiles, setScriptFiles] = useState<{ url: string; name: string }[]>([]);
+  const [briefingFiles, setBriefingFiles] = useState<{ url: string; name: string }[]>([]);
   const [form, setForm] = useState({
     title: '',
     description: '',
@@ -72,25 +98,29 @@ export default function NewTask() {
     sponsorContact: '',
     sponsorDeadline: '',
     projectId: '',
+    assignedToId: '',
   });
 
   useEffect(() => {
     api.listProjects({ limit: '100' }).then((r) => setProjects(r.items)).catch(() => {});
+    api.listMembers().then((m) => setMembers(m)).catch(() => {});
   }, []);
 
   function set(key: string, value: any) {
     setForm((f) => ({ ...f, [key]: value }));
   }
 
-  async function handleFileUpload(file: File, target: 'script' | 'briefing') {
+  async function handleFileUpload(files: File[], target: 'script' | 'briefing') {
     const setUploading = target === 'script' ? setScriptUploading : setBriefingUploading;
-    const setFile = target === 'script' ? setScriptFile : setBriefingFile;
+    const setFiles = target === 'script' ? setScriptFiles : setBriefingFiles;
     setUploading(true);
-    try {
-      const result = await api.uploadFile(file);
-      setFile({ url: result.fileUrl, name: result.fileName });
-    } catch (err: any) {
-      alert(err.message || 'Erro ao enviar arquivo');
+    for (const file of files) {
+      try {
+        const result = await api.uploadFile(file);
+        setFiles((prev) => [...prev, { url: result.fileUrl, name: result.fileName }]);
+      } catch (err: any) {
+        alert(err.message || 'Erro ao enviar arquivo');
+      }
     }
     setUploading(false);
   }
@@ -104,17 +134,17 @@ export default function NewTask() {
       if (form.recordDate) body.recordDate = new Date(form.recordDate).toISOString();
       if (form.publishDate) body.publishDate = new Date(form.publishDate).toISOString();
       if (form.script) body.script = form.script;
-      if (scriptFile.url) body.scriptFileUrl = scriptFile.url;
+      if (scriptFiles.length > 0) body.scriptFileUrl = JSON.stringify(scriptFiles);
       if (form.driveLink) body.driveLink = form.driveLink;
-      if (form.projectId) body.projectId = form.projectId;
       body.isSponsored = form.isSponsored;
       if (form.isSponsored) {
         if (form.sponsorName) body.sponsorName = form.sponsorName;
         if (form.sponsorBriefing) body.sponsorBriefing = form.sponsorBriefing;
-        if (briefingFile.url) body.briefingFileUrl = briefingFile.url;
+        if (briefingFiles.length > 0) body.briefingFileUrl = JSON.stringify(briefingFiles);
         if (form.sponsorContact) body.sponsorContact = form.sponsorContact;
         if (form.sponsorDeadline) body.sponsorDeadline = new Date(form.sponsorDeadline).toISOString();
       }
+      if (form.assignedToId) body.assignedToId = form.assignedToId;
       await api.createTask(body);
       router.push('/tasks');
     } catch (err: any) {
@@ -171,81 +201,36 @@ export default function NewTask() {
             />
             <FileUploadField
               label="Enviar arquivo do roteiro"
-              fileUrl={scriptFile.url}
-              fileName={scriptFile.name}
+              files={scriptFiles}
               uploading={scriptUploading}
               onUpload={(f) => handleFileUpload(f, 'script')}
-              onRemove={() => setScriptFile({ url: '', name: '' })}
+              onRemove={(idx) => setScriptFiles((prev) => prev.filter((_, i) => i !== idx))}
             />
           </div>
 
-          {/* Sponsored */}
-          <div className="card p-6">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => set('isSponsored', !form.isSponsored)}
-                className={`w-10 h-6 rounded-full transition-colors relative ${form.isSponsored ? 'bg-primary' : 'bg-gray-200'}`}
-              >
-                <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${form.isSponsored ? 'translate-x-4' : 'translate-x-0.5'}`} />
-              </button>
-              <div className="flex items-center gap-2">
-                <Megaphone className="w-4 h-4 text-accent-orange" strokeWidth={2} />
-                <span className="text-sm font-semibold text-text-primary">Conteudo Patrocinado</span>
-              </div>
-            </div>
-            {form.isSponsored && (
-              <div className="space-y-4 pt-4 mt-4 border-t border-border">
-                <div>
-                  <label className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wider">Empresa / Marca</label>
-                  <input type="text" value={form.sponsorName} onChange={(e) => set('sponsorName', e.target.value)} placeholder="Nome da empresa" className="input-field" maxLength={200} />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wider">Briefing</label>
-                  <textarea value={form.sponsorBriefing} onChange={(e) => set('sponsorBriefing', e.target.value)} placeholder="Detalhes do briefing..." className="input-field min-h-[120px] resize-y" />
-                  <FileUploadField
-                    label="Enviar arquivo do briefing"
-                    fileUrl={briefingFile.url}
-                    fileName={briefingFile.name}
-                    uploading={briefingUploading}
-                    onUpload={(f) => handleFileUpload(f, 'briefing')}
-                    onRemove={() => setBriefingFile({ url: '', name: '' })}
-                  />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wider">Contato</label>
-                    <input type="text" value={form.sponsorContact} onChange={(e) => set('sponsorContact', e.target.value)} placeholder="Email ou telefone" className="input-field" maxLength={200} />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wider">Deadline da Entrega</label>
-                    <input type="datetime-local" value={form.sponsorDeadline} onChange={(e) => set('sponsorDeadline', e.target.value)} className="input-field" />
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+
         </div>
 
         {/* Right Column - Config sidebar */}
         <div className="lg:col-span-5 space-y-4">
           {/* Platform & Priority */}
           <div className="card p-6">
-            <label className="block text-xs font-semibold text-text-secondary mb-2 uppercase tracking-wider">Plataforma</label>
-            <div className="flex gap-2 flex-wrap mb-5">
-              {PLATFORMS.map((p) => (
-                <button
-                  key={p.value}
-                  onClick={() => set('platform', p.value)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
-                    form.platform === p.value
-                      ? 'bg-primary text-white border-primary'
-                      : 'bg-white text-text-secondary border-border hover:border-primary'
-                  }`}
-                >
-                  {p.label}
-                </button>
+            <label className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wider flex items-center gap-1.5">
+              <User className="w-3.5 h-3.5" strokeWidth={2} />
+              Atribuir a
+            </label>
+            <select
+              value={form.assignedToId}
+              onChange={(e) => set('assignedToId', e.target.value)}
+              className="input-field mb-5"
+            >
+              <option value="">Não atribuído</option>
+              {members.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name || m.email}
+                </option>
               ))}
-            </div>
+            </select>
             <label className="block text-xs font-semibold text-text-secondary mb-2 uppercase tracking-wider">Prioridade</label>
             <div className="flex gap-2 flex-wrap">
               {PRIORITIES.map((p) => (
@@ -262,18 +247,9 @@ export default function NewTask() {
             </div>
           </div>
 
-          {/* Project */}
-          {projects.length > 0 && (
-            <div className="card p-6">
-              <label className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wider">Projeto (opcional)</label>
-              <select value={form.projectId} onChange={(e) => set('projectId', e.target.value)} className="input-field">
-                <option value="">Nenhum projeto</option>
-                {projects.map((p) => (
-                  <option key={p.id} value={p.id}>{p.title}</option>
-                ))}
-              </select>
-            </div>
-          )}
+
+
+
 
           {/* Dates */}
           <div className="card p-6">

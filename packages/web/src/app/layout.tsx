@@ -4,7 +4,7 @@ import { AuthProvider } from '../components/AuthProvider';
 import { ThemeProvider } from '../components/ThemeProvider';
 
 export const metadata = {
-  title: 'SECOM AI Platform',
+  title: 'SeCom Platform',
   description: 'Plataforma open-source de criacao e gestao de conteudo com IA',
 };
 

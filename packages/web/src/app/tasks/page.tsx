@@ -3,21 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { api } from '../../lib/api';
-import { Plus, Trash2, CheckSquare, Clock, Megaphone, Edit3, ChevronLeft, ChevronRight } from 'lucide-react';
-
-const STATUS_BADGE: Record<string, string> = {
-  PENDING: 'badge-pending',
-  IN_PROGRESS: 'badge-in-progress',
-  COMPLETED: 'badge-completed',
-  CANCELLED: 'badge-cancelled',
-};
-
-const STATUS_LABEL: Record<string, string> = {
-  PENDING: 'Pendente',
-  IN_PROGRESS: 'Em Andamento',
-  COMPLETED: 'Concluido',
-  CANCELLED: 'Cancelado',
-};
+import { Plus, Trash2, Clock, Edit3, User, GripVertical, CalendarDays } from 'lucide-react';
 
 const PRIORITY_BADGE: Record<string, string> = {
   LOW: 'badge-low',
@@ -28,68 +14,102 @@ const PRIORITY_BADGE: Record<string, string> = {
 
 const PRIORITY_LABEL: Record<string, string> = {
   LOW: 'Baixa',
-  MEDIUM: 'Media',
+  MEDIUM: 'Média',
   HIGH: 'Alta',
   URGENT: 'Urgente',
 };
 
-const PLATFORM_LABEL: Record<string, string> = {
-  YOUTUBE: 'YouTube',
-  INSTAGRAM: 'Instagram',
-  META_ADS: 'Meta Ads',
-  TIKTOK: 'TikTok',
-  OTHER: 'Outro',
-};
+const COLUMNS = [
+  { id: 'PENDING', label: 'Pendentes', color: 'bg-bg-main border-border' },
+  { id: 'IN_PROGRESS', label: 'Em Andamento', color: 'bg-blue-50/50 dark:bg-blue-500/10 border-blue-200/50 dark:border-blue-500/20' },
+  { id: 'COMPLETED', label: 'Concluídas', color: 'bg-emerald-50/50 dark:bg-emerald-500/10 border-emerald-200/50 dark:border-emerald-500/20' },
+  { id: 'CANCELLED', label: 'Canceladas', color: 'bg-red-50/50 dark:bg-red-500/10 border-red-200/50 dark:border-red-500/20' },
+];
 
-export default function TasksList() {
+export default function TasksKanban() {
   const [tasks, setTasks] = useState<any[]>([]);
-  const [total, setTotal] = useState(0);
-  const [filter, setFilter] = useState('');
-  const [page, setPage] = useState(1);
+  const [members, setMembers] = useState<any[]>([]);
+  const [selectedMember, setSelectedMember] = useState<string>('');
+  const [loading, setLoading] = useState(true);
 
-  async function loadTasks() {
+  async function loadData() {
     try {
-      const params: Record<string, string> = { page: String(page), limit: '20' };
-      if (filter) params.status = filter;
-      const result = await api.listTasks(params);
-      setTasks(result.items);
-      setTotal(result.total);
+      const [tasksRes, membersRes] = await Promise.all([
+        api.listTasks({ limit: '500' }), // Load more tasks for Kanban
+        api.listMembers().catch(() => []),
+      ]);
+      setTasks(tasksRes.items);
+      setMembers(membersRes);
     } catch { /* ignore */ }
+    setLoading(false);
   }
 
-  useEffect(() => { loadTasks(); }, [filter, page]);
+  useEffect(() => { loadData(); }, []);
 
   async function handleDelete(id: string) {
     if (!confirm('Deletar esta tarefa?')) return;
     try {
       await api.deleteTask(id);
       setTasks((prev) => prev.filter((t) => t.id !== id));
-      setTotal((t) => t - 1);
     } catch { alert('Erro ao deletar'); }
   }
 
-  async function handleStatusChange(id: string, status: string) {
+  async function handleStatusChange(taskId: string, newStatus: string) {
+    // Optimistic update
+    setTasks((prev) => prev.map((t) => t.id === taskId ? { ...t, status: newStatus } : t));
     try {
-      await api.updateTask(id, { status });
-      setTasks((prev) => prev.map((t) => t.id === id ? { ...t, status } : t));
-    } catch { alert('Erro ao atualizar status'); }
+      await api.updateTask(taskId, { status: newStatus });
+    } catch {
+      alert('Erro ao mover tarefa');
+      loadData(); // Revert on error
+    }
   }
 
-  const filters = [
-    { value: '', label: 'Todas' },
-    { value: 'PENDING', label: 'Pendentes' },
-    { value: 'IN_PROGRESS', label: 'Em Andamento' },
-    { value: 'COMPLETED', label: 'Concluidas' },
-    { value: 'CANCELLED', label: 'Canceladas' },
-  ];
+  function onDragStart(e: React.DragEvent, taskId: string) {
+    e.dataTransfer.setData('taskId', taskId);
+  }
+
+  function onDrop(e: React.DragEvent, newStatus: string) {
+    e.preventDefault();
+    const taskId = e.dataTransfer.getData('taskId');
+    if (taskId) {
+      const task = tasks.find(t => t.id === taskId);
+      if (task && task.status !== newStatus) {
+        handleStatusChange(taskId, newStatus);
+      }
+    }
+  }
+
+  function onDragOver(e: React.DragEvent) {
+    e.preventDefault();
+  }
+
+  const filteredTasks = tasks.filter(t => selectedMember === '' || t.assignedToId === selectedMember);
+
+  const getFiles = (task: any) => {
+    let files: any[] = [];
+    try {
+      if (task.scriptFileUrl) {
+        const parsed = task.scriptFileUrl.startsWith('[') ? JSON.parse(task.scriptFileUrl) : [{ url: task.scriptFileUrl }];
+        files = [...files, ...parsed];
+      }
+      if (task.briefingFileUrl) {
+        const parsed = task.briefingFileUrl.startsWith('[') ? JSON.parse(task.briefingFileUrl) : [{ url: task.briefingFileUrl }];
+        files = [...files, ...parsed];
+      }
+    } catch (e) { /* ignore */ }
+    return files;
+  };
+  
+  const isImage = (url: string) => /\.(jpg|jpeg|png|gif|webp)$/i.test(url || '');
 
   return (
-    <div className="max-w-7xl mx-auto animate-fade-in">
+    <div className="max-w-[1600px] mx-auto animate-fade-in h-[calc(100vh-100px)] flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 flex-shrink-0">
         <div>
-          <h1 className="text-page-title text-text-primary">Tarefas</h1>
-          <p className="text-sm text-text-secondary mt-1">{total} tarefas no total</p>
+          <h1 className="text-page-title text-text-primary flex items-center gap-2">Kanban de Tarefas</h1>
+          <p className="text-sm text-text-secondary mt-1">Gerencie o fluxo de produção de conteúdo</p>
         </div>
         <Link href="/tasks/new" className="btn-cta">
           <Plus className="w-4 h-4" strokeWidth={2.5} />
@@ -97,129 +117,129 @@ export default function TasksList() {
         </Link>
       </div>
 
-      {/* Filters */}
-      <div className="flex gap-2 mb-6 flex-wrap">
-        {filters.map((f) => (
+      {/* Tabs / Users */}
+      <div className="flex gap-2 mb-6 flex-wrap flex-shrink-0 border-b border-border pb-2">
+        <button
+          onClick={() => setSelectedMember('')}
+          className={`px-4 py-2 rounded-t-lg text-sm font-semibold transition-all border-b-2 ${
+            selectedMember === ''
+              ? 'border-primary text-primary bg-primary/5'
+              : 'border-transparent text-text-secondary hover:text-text-primary hover:bg-bg-card-hover'
+          }`}
+        >
+          Quadro Geral
+        </button>
+        {members.map((m) => (
           <button
-            key={f.value}
-            onClick={() => { setFilter(f.value); setPage(1); }}
-            className={`px-4 py-2 rounded-btn text-xs font-semibold transition-all duration-200 ${
-              filter === f.value
-                ? 'bg-primary text-white shadow-cta'
-                : 'bg-white text-text-secondary border border-border hover:border-primary hover:text-primary'
+            key={m.id}
+            onClick={() => setSelectedMember(m.id)}
+            className={`px-4 py-2 rounded-t-lg text-sm font-semibold transition-all border-b-2 flex items-center gap-1.5 ${
+              selectedMember === m.id
+                ? 'border-primary text-primary bg-primary/5'
+                : 'border-transparent text-text-secondary hover:text-text-primary hover:bg-bg-card-hover'
             }`}
           >
-            {f.label}
+            <User className="w-3.5 h-3.5" />
+            {m.name || m.email.split('@')[0]}
           </button>
         ))}
       </div>
 
-      {/* Table */}
-      <div className="card overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border">
-              <th className="px-5 py-3.5 text-left text-[11px] font-semibold text-text-muted uppercase tracking-wider">Tarefa</th>
-              <th className="px-5 py-3.5 text-left text-[11px] font-semibold text-text-muted uppercase tracking-wider">Status</th>
-              <th className="px-5 py-3.5 text-left text-[11px] font-semibold text-text-muted uppercase tracking-wider">Prioridade</th>
-              <th className="px-5 py-3.5 text-left text-[11px] font-semibold text-text-muted uppercase tracking-wider">Gravacao</th>
-              <th className="px-5 py-3.5 text-right text-[11px] font-semibold text-text-muted uppercase tracking-wider">Acoes</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-[#F0EFEC]">
-            {tasks.map((task) => (
-              <tr key={task.id} className="hover:bg-bg-card-hover transition-colors">
-                <td className="px-5 py-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <CheckSquare className="w-5 h-5 text-primary" strokeWidth={1.5} />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <Link href={`/tasks/${task.id}`} className="text-sm text-text-primary font-medium hover:text-primary truncate max-w-xs">
-                          {task.title}
-                        </Link>
-                        {task.isSponsored && (
-                          <Megaphone className="w-3.5 h-3.5 text-accent-orange flex-shrink-0" strokeWidth={2} />
-                        )}
-                      </div>
-                      <span className="text-xs text-text-secondary bg-bg-main px-2 py-0.5 rounded-badge font-medium">
-                        {PLATFORM_LABEL[task.platform] || task.platform}
-                      </span>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-5 py-4">
-                  <select
-                    value={task.status}
-                    onChange={(e) => handleStatusChange(task.id, e.target.value)}
-                    className={`badge ${STATUS_BADGE[task.status] || 'badge-pending'} cursor-pointer border-none appearance-none pr-5 bg-no-repeat bg-right`}
-                    style={{ backgroundImage: "url(\"data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23636E72' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e\")", backgroundSize: '12px', backgroundPosition: 'right 4px center' }}
+      {/* Kanban Board */}
+      <div className="flex-1 flex gap-4 overflow-x-auto pb-4 items-start">
+        {COLUMNS.map(col => {
+          const colTasks = filteredTasks.filter(t => t.status === col.id);
+          return (
+            <div 
+              key={col.id} 
+              className={`flex-shrink-0 w-[320px] rounded-xl border ${col.color} flex flex-col max-h-full overflow-hidden`}
+              onDrop={(e) => onDrop(e, col.id)}
+              onDragOver={onDragOver}
+            >
+              <div className="p-4 border-b border-black/5 dark:border-white/5 flex justify-between items-center bg-white/50 dark:bg-black/20">
+                <h3 className="font-semibold text-sm text-text-primary uppercase tracking-wider">{col.label}</h3>
+                <span className="text-xs font-bold text-text-secondary bg-black/5 dark:bg-white/10 px-2 py-0.5 rounded-full">
+                  {colTasks.length}
+                </span>
+              </div>
+              
+              <div className="p-3 flex-1 overflow-y-auto flex flex-col gap-3 min-h-[150px]">
+                {colTasks.map(task => {
+                  const taskFiles = getFiles(task);
+                  return (
+                  <div 
+                    key={task.id}
+                    draggable={selectedMember !== ''}
+                    onDragStart={(e) => selectedMember !== '' && onDragStart(e, task.id)}
+                    className={`bg-bg-card rounded-lg p-4 shadow-sm border border-border transition-all group ${
+                      selectedMember === '' ? 'cursor-default' : 'cursor-grab active:cursor-grabbing hover:shadow-md'
+                    }`}
                   >
-                    <option value="PENDING">Pendente</option>
-                    <option value="IN_PROGRESS">Em Andamento</option>
-                    <option value="COMPLETED">Concluido</option>
-                    <option value="CANCELLED">Cancelado</option>
-                  </select>
-                </td>
-                <td className="px-5 py-4">
-                  <span className={`badge ${PRIORITY_BADGE[task.priority] || 'badge-medium'}`}>
-                    {PRIORITY_LABEL[task.priority] || task.priority}
-                  </span>
-                </td>
-                <td className="px-5 py-4 text-text-secondary text-xs">
-                  {task.recordDate
-                    ? new Date(task.recordDate).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
-                    : <span className="text-text-muted">Sem data</span>}
-                </td>
-                <td className="px-5 py-4">
-                  <div className="flex gap-1.5 justify-end">
-                    <Link
-                      href={`/tasks/${task.id}`}
-                      className="px-3 py-1.5 rounded-badge text-xs font-semibold bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
-                    >
-                      <Edit3 className="w-3.5 h-3.5 inline mr-1" strokeWidth={1.5} />
-                      Editar
+                    {selectedMember === '' && (
+                      <div className="flex items-center gap-1.5 mb-2.5 text-[10px] font-bold text-text-secondary bg-bg-main border border-border w-fit px-2 py-0.5 rounded-full uppercase tracking-wider">
+                        <User className="w-3 h-3" />
+                        {task.assignedTo ? (task.assignedTo.name || task.assignedTo.email.split('@')[0]) : 'Não atribuído'}
+                      </div>
+                    )}
+                    <div className="flex justify-between items-start mb-2">
+                      <span className={`badge ${PRIORITY_BADGE[task.priority] || 'badge-medium'} text-[10px]`}>
+                        {PRIORITY_LABEL[task.priority] || task.priority}
+                      </span>
+                      <GripVertical className="w-4 h-4 text-text-muted opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
+                    
+                    <Link href={`/tasks/${task.id}`} className="block font-semibold text-sm text-text-primary mb-2 hover:text-primary leading-snug">
+                      {task.title}
                     </Link>
-                    <button
-                      onClick={() => handleDelete(task.id)}
-                      className="px-2.5 py-1.5 rounded-badge text-xs bg-red-50 text-status-failed hover:bg-red-100 transition-colors"
-                      title="Deletar"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" strokeWidth={1.5} />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-            {tasks.length === 0 && (
-              <tr>
-                <td colSpan={5} className="px-5 py-16 text-center">
-                  <CheckSquare className="w-12 h-12 text-text-muted mx-auto mb-3" strokeWidth={1} />
-                  <p className="text-text-muted text-sm">Nenhuma tarefa encontrada</p>
-                  <Link href="/tasks/new" className="text-xs text-primary hover:underline mt-2 inline-block font-medium">
-                    Criar primeira tarefa
-                  </Link>
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
 
-      {/* Pagination */}
-      {total > 20 && (
-        <div className="flex items-center justify-between mt-4 px-1">
-          <p className="text-xs text-text-secondary">
-            Mostrando {(page - 1) * 20 + 1}-{Math.min(page * 20, total)} de {total}
-          </p>
-          <div className="flex gap-2">
-            <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="btn-ghost text-xs disabled:opacity-30">Anterior</button>
-            <span className="px-3 py-1.5 text-xs text-text-secondary">Pagina {page}</span>
-            <button onClick={() => setPage((p) => p + 1)} disabled={tasks.length < 20} className="btn-ghost text-xs disabled:opacity-30">Proxima</button>
-          </div>
-        </div>
-      )}
+                    {task.description && (
+                      <p className="text-xs text-text-secondary mb-3 line-clamp-3 leading-relaxed">
+                        <i className="opacity-80">Descrição:</i> {task.description}
+                      </p>
+                    )}
+
+                    {taskFiles.length > 0 && (
+                      <div className="flex gap-1.5 flex-wrap mt-2">
+                        {taskFiles.map((f, i) => (
+                          <div key={i} className="w-8 h-8 rounded border border-border overflow-hidden bg-bg-main flex items-center justify-center" title={f.name || 'Anexo'}>
+                            {isImage(f.url || f.name) ? (
+                              <img src={f.url} alt="anexo" className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="text-[9px] font-bold text-text-secondary">FILE</div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {task.recordDate && (
+                      <div className="flex items-center gap-1.5 text-xs text-text-secondary mt-3 bg-bg-main w-fit px-2 py-1 rounded-md border border-border">
+                        <CalendarDays className="w-3.5 h-3.5" />
+                        {new Date(task.recordDate).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                      </div>
+                    )}
+
+                    <div className="flex justify-end gap-2 mt-4 pt-3 border-t border-border/50 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Link href={`/tasks/${task.id}`} className="p-1.5 text-text-secondary hover:text-primary hover:bg-primary/10 rounded-md transition-colors">
+                        <Edit3 className="w-4 h-4" />
+                      </Link>
+                      <button onClick={() => handleDelete(task.id)} className="p-1.5 text-text-secondary hover:text-status-failed hover:bg-red-50 dark:hover:bg-red-500/10 rounded-md transition-colors">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                )})}
+                
+                {!loading && colTasks.length === 0 && (
+                  <div className="h-24 border-2 border-dashed border-border/60 rounded-lg flex items-center justify-center text-text-muted text-xs">
+                    Arraste tarefas para cá
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
