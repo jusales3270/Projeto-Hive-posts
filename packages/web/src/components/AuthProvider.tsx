@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { api, setToken, getToken } from '../lib/api';
 import { Zap, Loader2 } from 'lucide-react';
 
-const PUBLIC_PATHS = ['/invite', '/login'];
+const PUBLIC_PATHS = ['/invite', '/login', '/demandas/nova'];
 
 interface AuthContextType {
   user: any;

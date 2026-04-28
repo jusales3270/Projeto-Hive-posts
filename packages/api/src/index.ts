@@ -16,6 +16,7 @@ import videoRoutes from './routes/video.routes';
 import settingsRoutes from './routes/settings.routes';
 import instagramRoutes from './routes/instagram.routes';
 import brandRoutes from './routes/brand.routes';
+import publicRoutes from './routes/public.routes';
 import { publishWorker } from './jobs/publish.worker';
 import { tokenRefreshWorker, initTokenRefreshJob } from './jobs/token-refresh.worker';
 import { taskReminderWorker } from './jobs/task-reminder.worker';
@@ -23,10 +24,12 @@ import { taskReminderWorker } from './jobs/task-reminder.worker';
 const app = express();
 
 app.use(cors({ origin: true, credentials: true }));
-app.use(express.json());
+app.use(express.json({ limit: '250mb' }));
+app.use(express.urlencoded({ limit: '250mb', extended: true }));
 app.use(apiLimiter);
 
 // Routes
+app.use('/api/public', publicRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/generate', generateRoutes);

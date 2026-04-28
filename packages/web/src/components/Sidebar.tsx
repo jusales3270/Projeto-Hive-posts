@@ -13,7 +13,7 @@ const links = [
   { href: '/posts/new', label: 'Novo Post', icon: PlusSquare, page: 'posts' },
   { href: '/posts', label: 'Posts', icon: FileText, page: 'posts' },
   { href: '/calendar', label: 'Calendario', icon: Calendar, page: 'calendar' },
-  { href: '/tasks', label: 'Tarefas', icon: CheckSquare, page: 'tasks' },
+  { href: '/tasks', label: 'Demandas', icon: CheckSquare, page: 'tasks' },
   { href: '/transcriptor', label: 'Transcritor', icon: Mic, page: 'transcriptor' },
   { href: '/brands', label: 'Brands', icon: Palette, page: 'brands' },
   { href: '/team', label: 'Equipe', icon: Users, page: 'team' },

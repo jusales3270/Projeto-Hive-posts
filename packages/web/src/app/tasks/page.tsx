@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { api } from '../../lib/api';
-import { Plus, Trash2, Clock, Edit3, User, GripVertical, CalendarDays } from 'lucide-react';
+import { Plus, Trash2, Clock, Edit3, User, GripVertical, CalendarDays, FolderKanban } from 'lucide-react';
 
 const PRIORITY_BADGE: Record<string, string> = {
   LOW: 'badge-low',
@@ -84,7 +84,11 @@ export default function TasksKanban() {
     e.preventDefault();
   }
 
-  const filteredTasks = tasks.filter(t => selectedMember === '' || t.assignedToId === selectedMember);
+  const filteredTasks = tasks.filter(t => {
+    if (selectedMember === 'SECRETARIA') return t.isSecretariaDemand === true;
+    if (selectedMember === '') return !t.isSecretariaDemand; // Quadro Geral shows production tasks (internal)
+    return t.assignedToId === selectedMember;
+  });
 
   const getFiles = (task: any) => {
     let files: any[] = [];
@@ -108,17 +112,29 @@ export default function TasksKanban() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6 flex-shrink-0">
         <div>
-          <h1 className="text-page-title text-text-primary flex items-center gap-2">Kanban de Tarefas</h1>
-          <p className="text-sm text-text-secondary mt-1">Gerencie o fluxo de produção de conteúdo</p>
+          <h1 className="text-page-title text-text-primary flex items-center gap-2">Kanban de Demandas</h1>
+          <p className="text-sm text-text-secondary mt-1">Gerencie o fluxo de solicitações e produção</p>
         </div>
         <Link href="/tasks/new" className="btn-cta">
           <Plus className="w-4 h-4" strokeWidth={2.5} />
-          Nova Tarefa
+          Nova Demanda
         </Link>
       </div>
 
       {/* Tabs / Users */}
       <div className="flex gap-2 mb-6 flex-wrap flex-shrink-0 border-b border-border pb-2">
+        <button
+          onClick={() => setSelectedMember('SECRETARIA')}
+          className={`px-4 py-2 rounded-t-lg text-sm font-semibold transition-all border-b-2 flex items-center gap-1.5 ${
+            selectedMember === 'SECRETARIA'
+              ? 'border-primary text-primary bg-primary/5'
+              : 'border-transparent text-text-secondary hover:text-text-primary hover:bg-bg-card-hover'
+          }`}
+        >
+          <FolderKanban className="w-3.5 h-3.5" />
+          Demanda Secretarias
+        </button>
+
         <button
           onClick={() => setSelectedMember('')}
           className={`px-4 py-2 rounded-t-lg text-sm font-semibold transition-all border-b-2 ${
@@ -175,11 +191,24 @@ export default function TasksKanban() {
                       selectedMember === '' ? 'cursor-default' : 'cursor-grab active:cursor-grabbing hover:shadow-md'
                     }`}
                   >
-                    {selectedMember === '' && (
-                      <div className="flex items-center gap-1.5 mb-2.5 text-[10px] font-bold text-text-secondary bg-bg-main border border-border w-fit px-2 py-0.5 rounded-full uppercase tracking-wider">
-                        <User className="w-3 h-3" />
-                        {task.assignedTo ? (task.assignedTo.name || task.assignedTo.email.split('@')[0]) : 'Não atribuído'}
+                    {task.isSecretariaDemand ? (
+                      <div className="flex flex-col gap-1 mb-2.5">
+                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-primary bg-primary/5 border border-primary/20 w-fit px-2 py-0.5 rounded-full uppercase tracking-wider">
+                          <FolderKanban className="w-3 h-3" />
+                          {task.secretariaName || 'Secretaria'}
+                        </div>
+                        <div className="text-[10px] text-text-muted px-2 flex items-center gap-1">
+                          <User className="w-2.5 h-2.5" />
+                          De: {task.requesterName || 'Externo'}
+                        </div>
                       </div>
+                    ) : (
+                      selectedMember === '' && (
+                        <div className="flex items-center gap-1.5 mb-2.5 text-[10px] font-bold text-text-secondary bg-bg-main border border-border w-fit px-2 py-0.5 rounded-full uppercase tracking-wider">
+                          <User className="w-3 h-3" />
+                          {task.assignedTo ? (task.assignedTo.name || task.assignedTo.email.split('@')[0]) : 'Não atribuído'}
+                        </div>
+                      )
                     )}
                     <div className="flex justify-between items-start mb-2">
                       <span className={`badge ${PRIORITY_BADGE[task.priority] || 'badge-medium'} text-[10px]`}>

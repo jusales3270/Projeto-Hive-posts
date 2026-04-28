@@ -3,7 +3,7 @@
 import { usePathname } from 'next/navigation';
 import { Sidebar } from './Sidebar';
 
-const PUBLIC_PATHS = ['/invite', '/login'];
+const PUBLIC_PATHS = ['/invite', '/login', '/demandas/nova'];
 
 export function LayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

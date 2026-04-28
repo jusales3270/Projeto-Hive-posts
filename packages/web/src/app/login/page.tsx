@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../../components/AuthProvider';
 import { Loader2, Mail, Lock } from 'lucide-react';
 import { useTheme } from 'next-themes';
+import { InteractiveBackground } from '@/components/InteractiveBackground';
 
 export default function Login() {
   const router = useRouter();
@@ -39,10 +40,9 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-bg-main relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
       {/* Background decorations */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 blur-[120px] rounded-full pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-accent-pink/20 blur-[120px] rounded-full pointer-events-none" />
+      <InteractiveBackground />
 
       <div className="w-full max-w-md p-8 relative z-10 animate-fade-in">
         <div className="flex flex-col items-center mb-8">

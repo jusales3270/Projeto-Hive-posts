@@ -14,8 +14,8 @@ export async function uploadImageController(req: Request, res: Response) {
       return;
     }
 
-    if (req.file.size > 10 * 1024 * 1024) {
-      res.status(400).json({ success: false, error: 'File too large (max 10MB)' });
+    if (req.file.size > 200 * 1024 * 1024) {
+      res.status(400).json({ success: false, error: 'Arquivo muito grande (max 200MB)' });
       return;
     }
 
@@ -47,8 +47,8 @@ export async function uploadMultipleImagesController(req: Request, res: Response
         res.status(400).json({ success: false, error: `Invalid file type: ${file.originalname}` });
         return;
       }
-      if (file.size > 10 * 1024 * 1024) {
-        res.status(400).json({ success: false, error: `File too large: ${file.originalname}` });
+      if (file.size > 200 * 1024 * 1024) {
+        res.status(400).json({ success: false, error: `Arquivo muito grande: ${file.originalname}` });
         return;
       }
       const imageUrl = await uploadImage(file.buffer, file.mimetype);
@@ -88,8 +88,8 @@ export async function uploadFileController(req: Request, res: Response) {
       return;
     }
 
-    if (req.file.size > 20 * 1024 * 1024) {
-      res.status(400).json({ success: false, error: 'Arquivo muito grande (max 20MB)' });
+    if (req.file.size > 200 * 1024 * 1024) {
+      res.status(400).json({ success: false, error: 'Arquivo muito grande (max 200MB)' });
       return;
     }
 

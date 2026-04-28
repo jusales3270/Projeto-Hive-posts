@@ -276,4 +276,20 @@ export const api = {
     if (!res.ok) throw new Error(data?.error || 'Upload failed');
     return data?.data;
   },
+
+  // Public
+  publicCreateDemand: (body: Record<string, unknown>) =>
+    request('/api/public/demandas', { method: 'POST', body: JSON.stringify(body) }),
+
+  publicUploadFile: async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch(`${BASE_URL}/api/public/upload`, {
+      method: 'POST',
+      body: formData,
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.error || 'Upload failed');
+    return data.data as { fileUrl: string; fileName: string; mimeType: string };
+  },
 };

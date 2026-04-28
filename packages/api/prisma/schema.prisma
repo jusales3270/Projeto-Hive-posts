@@ -205,6 +205,11 @@ model Task {
   briefingFileUrl String?
   sponsorContact  String?
   sponsorDeadline DateTime?
+  
+  isSecretariaDemand Boolean @default(false)
+  secretariaName     String?
+  requesterName      String?
+
   userId          String
   user            User         @relation("TaskCreator", fields: [userId], references: [id])
   assignedToId    String?
