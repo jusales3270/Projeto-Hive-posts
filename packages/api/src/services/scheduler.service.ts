@@ -3,11 +3,11 @@ import { redis } from '../config/redis';
 
 const publishQueue = new Queue('publish-queue', { connection: redis });
 
-export async function schedulePost(postId: string, scheduledAt: Date) {
+export async function schedulePost(postId: string, scheduledAt: Date, accountId?: string) {
   const delay = scheduledAt.getTime() - Date.now();
   if (delay < 0) throw new Error('Scheduled time must be in the future');
 
-  await publishQueue.add('publish', { postId }, { delay, jobId: `publish-${postId}` });
+  await publishQueue.add('publish', { postId, accountId }, { delay, jobId: `publish-${postId}` });
 }
 
 export async function cancelScheduledPost(postId: string) {
@@ -15,9 +15,9 @@ export async function cancelScheduledPost(postId: string) {
   if (job) await job.remove();
 }
 
-export async function reschedulePost(postId: string, newScheduledAt: Date) {
+export async function reschedulePost(postId: string, newScheduledAt: Date, accountId?: string) {
   await cancelScheduledPost(postId);
-  await schedulePost(postId, newScheduledAt);
+  await schedulePost(postId, newScheduledAt, accountId);
 }
 
 export { publishQueue };

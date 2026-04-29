@@ -39,5 +39,13 @@ export async function getSetting(key: string, userId?: string): Promise<string |
 
   // Fallback to environment variable
   const envGetter = ENV_MAP[key];
-  return envGetter ? envGetter() : undefined;
+  const envValue = envGetter ? envGetter() : undefined;
+  if (envValue) return envValue;
+
+  // Special fallback: if NANO_BANANA_API_KEY is not set, try GEMINI_API_KEY
+  if (key === 'NANO_BANANA_API_KEY' && env.GEMINI_API_KEY) {
+    return env.GEMINI_API_KEY;
+  }
+
+  return undefined;
 }
