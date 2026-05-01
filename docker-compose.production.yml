@@ -89,6 +89,8 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
+    ports:
+      - "3005:3001"
     restart: unless-stopped
 
   web:
